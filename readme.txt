@@ -12,11 +12,12 @@ Custom Elementor widgets for a three-step process card section (Test, Track, Tra
 
 == Description ==
 
-LT Process Cards adds custom Elementor widgets that reproduce a three-step
-"how it works" section: a booking card with date and time chips, a results card
-with a range chart, and a plan card with an icon list.
+LT Process Cards adds a single custom Elementor widget that reproduces a
+three-step "how it works" section: a booking card with date and time chips,
+a results card with a range chart, and a plan card with an icon list, laid
+out together in one row.
 
-The widgets appear in the Elementor panel under the **LT Blocks** category.
+The widget appears in the Elementor panel under the **LT Blocks** category.
 
 This release is a development skeleton. Widget controls and the final markup are
 implemented in subsequent phases.
@@ -32,8 +33,8 @@ implemented in subsequent phases.
 1. Upload the `lt-process-cards` folder to `/wp-content/plugins/`, or install the
    ZIP through **Plugins > Add New > Upload Plugin**.
 2. Activate the plugin through the **Plugins** screen in WordPress.
-3. Edit any page with Elementor and search for **LT Booking Card** in the widget
-   panel.
+3. Edit any page with Elementor and search for **LT Process Cards** in the
+   widget panel.
 
 == Frequently Asked Questions ==
 

@@ -10,11 +10,11 @@
 	'use strict';
 
 	/**
-	 * Initialise a single Booking Card instance.
+	 * Initialise a single Process Cards instance.
 	 *
 	 * @param {jQuery} $scope The widget wrapper, supplied by Elementor.
 	 */
-	function initBookingCard( $scope ) {
+	function initProcessCards( $scope ) {
 		if ( ! $scope || ! $scope.length ) {
 			return;
 		}
@@ -28,8 +28,8 @@
 		}
 
 		elementorFrontend.hooks.addAction(
-			'frontend/element_ready/lt_booking_card.default',
-			initBookingCard
+			'frontend/element_ready/lt_process_cards.default',
+			initProcessCards
 		);
 	} );
 }( jQuery ) );

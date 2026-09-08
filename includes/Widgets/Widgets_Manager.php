@@ -32,7 +32,7 @@ final class Widgets_Manager implements Registrable {
 	 * @var array<int, class-string<Widget_Base>>
 	 */
 	private const WIDGETS = array(
-		Booking_Card::class,
+		Process_Cards::class,
 	);
 
 	/**
