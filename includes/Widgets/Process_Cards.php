@@ -884,13 +884,19 @@ final class Process_Cards extends Widget_Base {
 	 * (Heading/Title, Subtitle, labels, etc.) - those aren't repeated here.
 	 * This covers the hard-coded colors Step 6 didn't touch: the accent
 	 * color (also used as the selected-chip background/border and driven by
-	 * `color_primary`), the interactive chip hover state, and the plan-item
-	 * icon (Normal + Hover). Border color lives in the Border controls
-	 * (Step 10, register_border_controls()) and panel/chip background color
-	 * lives in the Background controls (Step 12, register_background_controls())
-	 * instead of here, so each stays a single native Group_Control_Border /
-	 * Group_Control_Background rather than fighting a second, separate color
-	 * control over the same `border-color` / `background-color` declaration.
+	 * `color_primary`), and the plan-item icon (Normal + Hover - the
+	 * original design has no hover state on the plan icon, so this stays a
+	 * no-op by default; see the note control below). Border color lives in
+	 * the Border controls (Step 10, register_border_controls()) and
+	 * panel/chip background color lives in the Background controls
+	 * (Step 12, register_background_controls()) instead of here, so each
+	 * stays a single native Group_Control_Border / Group_Control_Background
+	 * rather than fighting a second, separate color control over the same
+	 * `border-color` / `background-color` declaration. The date/time chips'
+	 * hover border color and hover transition duration live with their
+	 * Normal-state border, inside the per-chip Normal/Hover tabs in
+	 * register_border_controls() (Step 14) - that is the only property that
+	 * actually changes on `:hover` for those chips in the original design.
 	 *
 	 * Every control writes both a CSS custom property on `{{WRAPPER}}` (for
 	 * forward-compatibility with the real stylesheet once it's ported) and
@@ -935,38 +941,6 @@ final class Process_Cards extends Widget_Base {
 					'{{WRAPPER}}' => '--lt-accent-text: {{VALUE}};',
 					'{{WRAPPER}} .lt-date.is-selected .lt-day, {{WRAPPER}} .lt-date.is-selected .lt-day-num' => 'color: {{VALUE}};',
 					'{{WRAPPER}} .lt-time.is-selected' => 'color: {{VALUE}};',
-				),
-			)
-		);
-
-		$this->end_controls_section();
-
-		$this->start_controls_section(
-			'section_colors_chips_hover',
-			array(
-				'label' => esc_html__( 'Date & Time Chips: Hover', 'lt-process-cards' ),
-				'tab'   => Controls_Manager::TAB_STYLE,
-			)
-		);
-
-		$this->add_control(
-			'chips_hover_note',
-			array(
-				'type'            => Controls_Manager::RAW_HTML,
-				'raw'             => esc_html__( 'Normal-state text colors are set in the Colors section above; normal-state background is set in the Background sections below; normal-state border type/width/color are set in the Border sections below. This section only covers the :hover state, which in the original design lightens the border to the accent color.', 'lt-process-cards' ),
-				'content_classes' => 'elementor-descriptor',
-			)
-		);
-
-		$this->add_control(
-			'chip_hover_border_color',
-			array(
-				'label'     => esc_html__( 'Hover Border Color', 'lt-process-cards' ),
-				'type'      => Controls_Manager::COLOR,
-				'default'   => '#AD9771',
-				'selectors' => array(
-					'{{WRAPPER}} .lt-date:hover'                 => 'border-color: {{VALUE}};',
-					'{{WRAPPER}} .lt-time:hover:not(.is-disabled)' => 'border-color: {{VALUE}};',
 				),
 			)
 		);
@@ -1605,14 +1579,20 @@ final class Process_Cards extends Widget_Base {
 	 * controls either, for the same reason: nothing in the original CSS
 	 * draws a border on them.
 	 *
-	 * The chip hover border *color* remains the single control in the
-	 * "Date & Time Chips: Hover" section (Step 6) - only the color changes
-	 * on `:hover` in the original design, so a second full border group for
-	 * that state would expose width/style controls with no effect.
+	 * The date and time chips additionally get Normal/Hover tabs (Step 14)
+	 * around their border, because `:hover` in the original stylesheet only
+	 * ever changes `border-color` - never width, style, background, text,
+	 * icon color, opacity, shadow or transform - so a second full border
+	 * group for the Hover tab would expose width/style controls with no
+	 * effect. The Hover tab is therefore just the one property that
+	 * actually changes, plus the transition duration that drives it
+	 * (0.15s in the original CSS). `.lt-plan-item` has no `:hover` rule in
+	 * the original design at all, so it gets no Hover tab.
 	 *
 	 * Every default matches assets/css/lt-process-cards.css exactly: solid,
-	 * 1px, #E7DDCC for the chip/item borders, and the original border-radius
-	 * value (12px / 999px / 14px / 20px) for each element.
+	 * 1px, #E7DDCC for the chip/item borders; #AD9771 and 150ms for the
+	 * chip hover border color and transition; and the original
+	 * border-radius value (12px / 999px / 14px / 20px) for each element.
 	 */
 	private function register_border_controls(): void {
 		$this->start_controls_section(
@@ -1654,7 +1634,13 @@ final class Process_Cards extends Widget_Base {
 			)
 		);
 
-		$this->add_border_control( 'date_chip_border', '{{WRAPPER}} .lt-date', '#E7DDCC' );
+		$this->add_border_hover_control(
+			'date_chip',
+			'{{WRAPPER}} .lt-date',
+			'{{WRAPPER}} .lt-date:hover',
+			'#E7DDCC',
+			'#AD9771'
+		);
 
 		$this->add_border_radius_control(
 			'border_radius_date_chip',
@@ -1678,7 +1664,13 @@ final class Process_Cards extends Widget_Base {
 			)
 		);
 
-		$this->add_border_control( 'time_chip_border', '{{WRAPPER}} .lt-time', '#E7DDCC' );
+		$this->add_border_hover_control(
+			'time_chip',
+			'{{WRAPPER}} .lt-time',
+			'{{WRAPPER}} .lt-time:hover:not(.is-disabled)',
+			'#E7DDCC',
+			'#AD9771'
+		);
 
 		$this->add_border_radius_control(
 			'border_radius_time_chip',
@@ -1757,6 +1749,93 @@ final class Process_Cards extends Widget_Base {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Register a Normal/Hover tabbed border control for one element whose
+	 * only `:hover` change in the original design is `border-color`.
+	 *
+	 * The Normal tab is the same native `Group_Control_Border` as
+	 * add_border_control() (type, width, color). The Hover tab is
+	 * deliberately just a single Color control plus a transition-duration
+	 * Slider - not a second Group_Control_Border - because nothing else
+	 * (width, style, background, text, icon, opacity, shadow, transform)
+	 * changes on hover here; adding those fields would expose controls with
+	 * no visible effect.
+	 *
+	 * @param string $name             Base control name for the Normal-tab border group
+	 *                                 (see add_border_control()) and the prefix for the two
+	 *                                 Hover-tab control IDs derived from it.
+	 * @param string $normal_selector  CSS selector for the element's resting state.
+	 * @param string $hover_selector   CSS selector for the element's `:hover` state.
+	 * @param string $border_default   Default Normal-state border color, matching the original stylesheet.
+	 * @param string $hover_default    Default Hover-state border color, matching the original stylesheet.
+	 */
+	private function add_border_hover_control(
+		string $name,
+		string $normal_selector,
+		string $hover_selector,
+		string $border_default,
+		string $hover_default
+	): void {
+		$this->start_controls_tabs( "tabs_{$name}_border" );
+
+		$this->start_controls_tab(
+			"tab_{$name}_border_normal",
+			array(
+				'label' => esc_html__( 'Normal', 'lt-process-cards' ),
+			)
+		);
+
+		$this->add_border_control( $name, $normal_selector, $border_default );
+
+		$this->end_controls_tab();
+
+		$this->start_controls_tab(
+			"tab_{$name}_border_hover",
+			array(
+				'label' => esc_html__( 'Hover', 'lt-process-cards' ),
+			)
+		);
+
+		$this->add_control(
+			"{$name}_hover_border_color",
+			array(
+				'label'     => esc_html__( 'Border Color', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'default'   => $hover_default,
+				'selectors' => array(
+					$hover_selector => 'border-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			"{$name}_hover_transition_duration",
+			array(
+				'label'      => esc_html__( 'Transition Duration', 'lt-process-cards' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array( 'ms' ),
+				'range'      => array(
+					'ms' => array(
+						'min'  => 0,
+						'max'  => 1000,
+						'step' => 10,
+					),
+				),
+				'default'    => array(
+					'unit' => 'ms',
+					'size' => 150,
+				),
+				'selectors'  => array(
+					$normal_selector => 'transition-duration: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->end_controls_tab();
+
+		$this->end_controls_tabs();
 	}
 
 	/**
