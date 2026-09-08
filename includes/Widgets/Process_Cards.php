@@ -111,6 +111,7 @@ final class Process_Cards extends Widget_Base {
 		$this->register_card3_plan_controls();
 		$this->register_typography_controls();
 		$this->register_color_controls();
+		$this->register_layout_controls();
 	}
 
 	/**
@@ -1062,6 +1063,335 @@ final class Process_Cards extends Widget_Base {
 				'default'   => '#ffffff',
 				'selectors' => array(
 					'{{WRAPPER}} .lt-plan-item:hover .lt-plan-icon' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->end_controls_section();
+	}
+
+	/**
+	 * Register the Style-tab layout controls.
+	 *
+	 * Only covers containers where a layout property (a) exists in the
+	 * original CSS and (b) is safe for a user to change without breaking
+	 * the design. `display` is never exposed as an open choice - every
+	 * container here only works because it's a flex container, so each
+	 * control's own selector always re-asserts `display: flex` alongside
+	 * whatever it lets the user adjust, rather than letting a raw Display
+	 * dropdown break that assumption. `min-width: 0` on `.lt-card` (an
+	 * anti-overflow fix, not a preference) and `position` (unused anywhere
+	 * in the original design) are deliberately not exposed as controls.
+	 */
+	private function register_layout_controls(): void {
+		$this->start_controls_section(
+			'section_layout_row',
+			array(
+				'label' => esc_html__( 'Layout: Cards Row', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_responsive_control(
+			'layout_max_width',
+			array(
+				'label'      => esc_html__( 'Max Width', 'lt-process-cards' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array( 'px', '%' ),
+				'range'      => array(
+					'px' => array(
+						'min' => 320,
+						'max' => 1600,
+					),
+					'%'  => array(
+						'min' => 10,
+						'max' => 100,
+					),
+				),
+				'default'    => array(
+					'unit' => 'px',
+					'size' => 1200,
+				),
+				'selectors'  => array(
+					'{{WRAPPER}} .lt-cards-row' => 'max-width: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'layout_row_alignment',
+			array(
+				'label'                => esc_html__( 'Alignment', 'lt-process-cards' ),
+				'type'                 => Controls_Manager::CHOOSE,
+				'options'              => array(
+					'left'   => array(
+						'title' => esc_html__( 'Left', 'lt-process-cards' ),
+						'icon'  => 'eicon-h-align-left',
+					),
+					'center' => array(
+						'title' => esc_html__( 'Center', 'lt-process-cards' ),
+						'icon'  => 'eicon-h-align-center',
+					),
+					'right'  => array(
+						'title' => esc_html__( 'Right', 'lt-process-cards' ),
+						'icon'  => 'eicon-h-align-right',
+					),
+				),
+				'default'              => 'center',
+				'selectors_dictionary' => array(
+					'left'   => '0 auto 0 0',
+					'center' => '0 auto',
+					'right'  => '0 0 0 auto',
+				),
+				'selectors'            => array(
+					'{{WRAPPER}} .lt-cards-row' => 'margin: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'layout_flex_direction',
+			array(
+				'label'         => esc_html__( 'Flex Direction', 'lt-process-cards' ),
+				'type'          => Controls_Manager::CHOOSE,
+				'options'       => array(
+					'row'    => array(
+						'title' => esc_html__( 'Row (side by side)', 'lt-process-cards' ),
+						'icon'  => 'eicon-arrow-right',
+					),
+					'column' => array(
+						'title' => esc_html__( 'Column (stacked)', 'lt-process-cards' ),
+						'icon'  => 'eicon-arrow-down',
+					),
+				),
+				'default'       => 'row',
+				'tablet_default' => 'column',
+				'mobile_default' => 'column',
+				'selectors'     => array(
+					'{{WRAPPER}} .lt-cards-row' => 'display: flex; flex-direction: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'layout_gap',
+			array(
+				'label'      => esc_html__( 'Gap', 'lt-process-cards' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array(
+					'px' => array(
+						'min' => 0,
+						'max' => 80,
+					),
+				),
+				'default'    => array(
+					'unit' => 'px',
+					'size' => 20,
+				),
+				'selectors'  => array(
+					'{{WRAPPER}} .lt-cards-row' => 'gap: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'layout_align_items',
+			array(
+				'label'     => esc_html__( 'Vertical Alignment', 'lt-process-cards' ),
+				'type'      => Controls_Manager::CHOOSE,
+				'options'   => array(
+					'stretch'    => array(
+						'title' => esc_html__( 'Stretch (equal height)', 'lt-process-cards' ),
+						'icon'  => 'eicon-v-align-stretch',
+					),
+					'flex-start' => array(
+						'title' => esc_html__( 'Top', 'lt-process-cards' ),
+						'icon'  => 'eicon-v-align-top',
+					),
+					'center'     => array(
+						'title' => esc_html__( 'Middle', 'lt-process-cards' ),
+						'icon'  => 'eicon-v-align-middle',
+					),
+					'flex-end'   => array(
+						'title' => esc_html__( 'Bottom', 'lt-process-cards' ),
+						'icon'  => 'eicon-v-align-bottom',
+					),
+				),
+				'default'   => 'stretch',
+				'selectors' => array(
+					'{{WRAPPER}} .lt-cards-row' => 'align-items: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_layout_dates_times',
+			array(
+				'label' => esc_html__( 'Layout: Dates & Times', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_responsive_control(
+			'layout_dates_gap',
+			array(
+				'label'      => esc_html__( 'Dates Gap', 'lt-process-cards' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array(
+					'px' => array(
+						'min' => 0,
+						'max' => 40,
+					),
+				),
+				'default'    => array(
+					'unit' => 'px',
+					'size' => 10,
+				),
+				'selectors'  => array(
+					'{{WRAPPER}} .lt-dates' => 'display: flex; justify-content: center; gap: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'layout_times_gap',
+			array(
+				'label'      => esc_html__( 'Times Gap', 'lt-process-cards' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array(
+					'px' => array(
+						'min' => 0,
+						'max' => 40,
+					),
+				),
+				'default'    => array(
+					'unit' => 'px',
+					'size' => 8,
+				),
+				'selectors'  => array(
+					'{{WRAPPER}} .lt-times' => 'display: flex; justify-content: center; gap: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_layout_plan',
+			array(
+				'label' => esc_html__( 'Layout: Plan List', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_responsive_control(
+			'layout_plan_list_gap',
+			array(
+				'label'      => esc_html__( 'List Gap', 'lt-process-cards' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array(
+					'px' => array(
+						'min' => 0,
+						'max' => 40,
+					),
+				),
+				'default'    => array(
+					'unit' => 'px',
+					'size' => 10,
+				),
+				'selectors'  => array(
+					'{{WRAPPER}} .lt-plan-list' => 'display: flex; flex-direction: column; gap: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'layout_plan_item_gap',
+			array(
+				'label'      => esc_html__( 'Icon-to-Text Gap', 'lt-process-cards' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array(
+					'px' => array(
+						'min' => 0,
+						'max' => 40,
+					),
+				),
+				'default'    => array(
+					'unit' => 'px',
+					'size' => 14,
+				),
+				'selectors'  => array(
+					'{{WRAPPER}} .lt-plan-item' => 'display: flex; align-items: center; gap: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'layout_plan_icon_size',
+			array(
+				'label'      => esc_html__( 'Icon Size', 'lt-process-cards' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array(
+					'px' => array(
+						'min' => 20,
+						'max' => 80,
+					),
+				),
+				'default'    => array(
+					'unit' => 'px',
+					'size' => 40,
+				),
+				'selectors'  => array(
+					'{{WRAPPER}} .lt-plan-icon' => 'display: flex; align-items: center; justify-content: center; width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_layout_chart',
+			array(
+				'label' => esc_html__( 'Layout: Chart', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_responsive_control(
+			'layout_chart_alignment',
+			array(
+				'label'                => esc_html__( 'Alignment', 'lt-process-cards' ),
+				'type'                 => Controls_Manager::CHOOSE,
+				'options'              => array(
+					'left'   => array(
+						'title' => esc_html__( 'Left', 'lt-process-cards' ),
+						'icon'  => 'eicon-h-align-left',
+					),
+					'center' => array(
+						'title' => esc_html__( 'Center', 'lt-process-cards' ),
+						'icon'  => 'eicon-h-align-center',
+					),
+					'right'  => array(
+						'title' => esc_html__( 'Right', 'lt-process-cards' ),
+						'icon'  => 'eicon-h-align-right',
+					),
+				),
+				'default'              => 'center',
+				'selectors_dictionary' => array(
+					'left'   => 'flex-start',
+					'center' => 'center',
+					'right'  => 'flex-end',
+				),
+				'selectors'            => array(
+					'{{WRAPPER}} .lt-chart' => 'display: flex; justify-content: {{VALUE}};',
 				),
 			)
 		);
