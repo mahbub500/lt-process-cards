@@ -32,12 +32,17 @@ final class Process_Cards extends Widget_Base {
 	/**
 	 * Fixed, developer-authored SVG icons for the plan list.
 	 *
+	 * Strokes use `currentColor` (rather than the original's literal `#fff`)
+	 * so the "Plan Item Icon" Style-tab color controls can drive them via
+	 * the CSS `color` property on the `.lt-plan-icon` wrapper - the icon's
+	 * default rendered color is unchanged, only how it's driven changes.
+	 *
 	 * @var array<string, string>
 	 */
 	private const PLAN_ICONS = array(
-		'nutrition'   => '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12a8 8 0 0 0 16 0H4Z" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 12V5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><path d="M9 7c0-1.5 1-3 3-3s3 1.5 3 3" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>',
-		'supplements' => '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4.5" y="8.5" width="15" height="7" rx="3.5" transform="rotate(-45 12 12)" stroke="#fff" stroke-width="1.6"/><path d="M9.5 14.5 14.5 9.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>',
-		'activity'    => '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 12h3.5l1.8-4 3 8 1.8-4H21" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+		'nutrition'   => '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12a8 8 0 0 0 16 0H4Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 12V5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M9 7c0-1.5 1-3 3-3s3 1.5 3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+		'supplements' => '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4.5" y="8.5" width="15" height="7" rx="3.5" transform="rotate(-45 12 12)" stroke="currentColor" stroke-width="1.6"/><path d="M9.5 14.5 14.5 9.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+		'activity'    => '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 12h3.5l1.8-4 3 8 1.8-4H21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 	);
 
 	/**
@@ -105,6 +110,7 @@ final class Process_Cards extends Widget_Base {
 		$this->register_card2_results_controls();
 		$this->register_card3_plan_controls();
 		$this->register_typography_controls();
+		$this->register_color_controls();
 	}
 
 	/**
@@ -837,6 +843,226 @@ final class Process_Cards extends Widget_Base {
 				'label'          => esc_html__( 'Typography', 'lt-process-cards' ),
 				'selector'       => $selector,
 				'fields_options' => $fields_options,
+			)
+		);
+
+		$this->end_controls_section();
+	}
+
+	/**
+	 * Register the Style-tab color controls.
+	 *
+	 * Step 6 already gave every text role its own Text Color control
+	 * (Heading/Title, Subtitle, labels, etc.) - those aren't repeated here.
+	 * This covers the hard-coded colors Step 6 didn't touch: the shared
+	 * accent/background/border palette, the interactive chip hover state,
+	 * and the plan-item icon (Normal + Hover).
+	 *
+	 * Every control writes both a CSS custom property on `{{WRAPPER}}` (for
+	 * forward-compatibility with the real stylesheet once it's ported) and
+	 * the concrete property on the elements that need it today, so changes
+	 * are visible immediately without waiting on a later CSS step. Because
+	 * every selector is prefixed with `{{WRAPPER}}` - which Elementor
+	 * replaces with a class unique to that widget instance - the generated
+	 * rules can never leak into, or be affected by, a different instance of
+	 * this widget on the same page.
+	 */
+	private function register_color_controls(): void {
+		$this->start_controls_section(
+			'section_colors',
+			array(
+				'label' => esc_html__( 'Colors', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_control(
+			'color_primary',
+			array(
+				'label'     => esc_html__( 'Primary / Accent Color', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'default'   => '#AD9771',
+				'selectors' => array(
+					'{{WRAPPER}}'                        => '--lt-accent: {{VALUE}};',
+					'{{WRAPPER}} .lt-date.is-selected'   => 'background-color: {{VALUE}}; border-color: {{VALUE}};',
+					'{{WRAPPER}} .lt-time.is-selected'   => 'background-color: {{VALUE}}; border-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'color_accent_text',
+			array(
+				'label'     => esc_html__( 'Accent Text Color', 'lt-process-cards' ),
+				'description' => esc_html__( 'Text color used on top of the primary/accent color, e.g. a selected date or time chip.', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'default'   => '#ffffff',
+				'selectors' => array(
+					'{{WRAPPER}}' => '--lt-accent-text: {{VALUE}};',
+					'{{WRAPPER}} .lt-date.is-selected .lt-day, {{WRAPPER}} .lt-date.is-selected .lt-day-num' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .lt-time.is-selected' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'color_card_background',
+			array(
+				'label'     => esc_html__( 'Card Background Color', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'default'   => '#F3ECE1',
+				'selectors' => array(
+					'{{WRAPPER}}'             => '--lt-bg: {{VALUE}};',
+					'{{WRAPPER}} .lt-card'    => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'color_item_background',
+			array(
+				'label'       => esc_html__( 'Secondary Background Color', 'lt-process-cards' ),
+				'description' => esc_html__( 'Background of date chips, time chips and plan-item rows.', 'lt-process-cards' ),
+				'type'        => Controls_Manager::COLOR,
+				'default'     => '#ffffff',
+				'selectors'   => array(
+					'{{WRAPPER}}'                 => '--lt-item-bg: {{VALUE}};',
+					'{{WRAPPER}} .lt-date'        => 'background-color: {{VALUE}};',
+					'{{WRAPPER}} .lt-time'        => 'background-color: {{VALUE}};',
+					'{{WRAPPER}} .lt-plan-item'   => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'color_border',
+			array(
+				'label'       => esc_html__( 'Border Color', 'lt-process-cards' ),
+				'description' => esc_html__( 'Border of date chips, time chips and plan-item rows.', 'lt-process-cards' ),
+				'type'        => Controls_Manager::COLOR,
+				'default'     => '#E7DDCC',
+				'selectors'   => array(
+					'{{WRAPPER}}'                 => '--lt-border: {{VALUE}};',
+					'{{WRAPPER}} .lt-date'        => 'border-color: {{VALUE}};',
+					'{{WRAPPER}} .lt-time'        => 'border-color: {{VALUE}};',
+					'{{WRAPPER}} .lt-plan-item'   => 'border-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_colors_chips_hover',
+			array(
+				'label' => esc_html__( 'Date & Time Chips: Hover', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_control(
+			'chips_hover_note',
+			array(
+				'type'            => Controls_Manager::RAW_HTML,
+				'raw'             => esc_html__( 'Normal-state background, border and text colors are set in the Colors section above. This section only covers the :hover state, which in the original design lightens the border to the accent color.', 'lt-process-cards' ),
+				'content_classes' => 'elementor-descriptor',
+			)
+		);
+
+		$this->add_control(
+			'chip_hover_border_color',
+			array(
+				'label'     => esc_html__( 'Hover Border Color', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'default'   => '#AD9771',
+				'selectors' => array(
+					'{{WRAPPER}} .lt-date:hover'                 => 'border-color: {{VALUE}};',
+					'{{WRAPPER}} .lt-time:hover:not(.is-disabled)' => 'border-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_colors_plan_icon',
+			array(
+				'label' => esc_html__( 'Plan Item Icon', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_control(
+			'heading_icon_normal',
+			array(
+				'label' => esc_html__( 'Normal', 'lt-process-cards' ),
+				'type'  => Controls_Manager::HEADING,
+			)
+		);
+
+		$this->add_control(
+			'plan_icon_background_color',
+			array(
+				'label'     => esc_html__( 'Background', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'default'   => '#AD9771',
+				'selectors' => array(
+					'{{WRAPPER}} .lt-plan-icon' => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'plan_icon_color',
+			array(
+				'label'     => esc_html__( 'Color', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'default'   => '#ffffff',
+				'selectors' => array(
+					'{{WRAPPER}} .lt-plan-icon' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'heading_icon_hover',
+			array(
+				'label'     => esc_html__( 'Hover', 'lt-process-cards' ),
+				'type'      => Controls_Manager::HEADING,
+				'separator' => 'before',
+			)
+		);
+
+		$this->add_control(
+			'hover_note',
+			array(
+				'type'            => Controls_Manager::RAW_HTML,
+				'raw'             => esc_html__( 'The original design has no hover state on the plan icon; these default to the same colors as Normal so nothing changes unless you set them.', 'lt-process-cards' ),
+				'content_classes' => 'elementor-descriptor',
+			)
+		);
+
+		$this->add_control(
+			'plan_icon_hover_background_color',
+			array(
+				'label'     => esc_html__( 'Background', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'default'   => '#AD9771',
+				'selectors' => array(
+					'{{WRAPPER}} .lt-plan-item:hover .lt-plan-icon' => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'plan_icon_hover_color',
+			array(
+				'label'     => esc_html__( 'Color', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'default'   => '#ffffff',
+				'selectors' => array(
+					'{{WRAPPER}} .lt-plan-item:hover .lt-plan-icon' => 'color: {{VALUE}};',
+				),
 			)
 		);
 
