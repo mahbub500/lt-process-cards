@@ -10,6 +10,7 @@ declare( strict_types = 1 );
 namespace LT\ProcessCards\Widgets;
 
 use Elementor\Controls_Manager;
+use Elementor\Group_Control_Typography;
 use Elementor\Repeater;
 use Elementor\Widget_Base;
 use LT\ProcessCards\Assets\Assets_Manager;
@@ -103,6 +104,7 @@ final class Process_Cards extends Widget_Base {
 		$this->register_card1_booking_controls();
 		$this->register_card2_results_controls();
 		$this->register_card3_plan_controls();
+		$this->register_typography_controls();
 	}
 
 	/**
@@ -581,6 +583,260 @@ final class Process_Cards extends Widget_Base {
 						'item_desc'  => esc_html__( 'Stretching, strength training, sleep…', 'lt-process-cards' ),
 					),
 				),
+			)
+		);
+
+		$this->end_controls_section();
+	}
+
+	/**
+	 * Register the Style-tab typography controls for every distinct text
+	 * role in the design. Every default reproduces the matching rule from
+	 * the original stylesheet (font-family / size / weight / line-height /
+	 * letter-spacing / text-transform / color) exactly.
+	 */
+	private function register_typography_controls(): void {
+		// Eyebrow label - `.lt-num` (identical across all three cards).
+		$this->register_text_style_section(
+			'eyebrow',
+			esc_html__( 'Eyebrow Label', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-num',
+			array(
+				'font_family' => array( 'default' => 'Space Mono' ),
+				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 15 ) ),
+				'font_weight' => array( 'default' => '700' ),
+			),
+			'color',
+			'#AD9771',
+			'center'
+		);
+
+		// Title - `.lt-title` (identical across all three cards).
+		$this->register_text_style_section(
+			'title',
+			esc_html__( 'Title', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-title',
+			array(
+				'font_family' => array( 'default' => 'Playfair Display' ),
+				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 26 ) ),
+				'font_weight' => array( 'default' => '600' ),
+				'line_height' => array( 'default' => array( 'unit' => 'em', 'size' => 1.2 ) ),
+			),
+			'color',
+			'#2E2A24',
+			'center'
+		);
+
+		// Subtitle / description - `.lt-sub` (identical across all three cards).
+		$this->register_text_style_section(
+			'subtitle',
+			esc_html__( 'Subtitle', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-sub',
+			array(
+				'font_family' => array( 'default' => 'Inter' ),
+				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 14 ) ),
+				'line_height' => array( 'default' => array( 'unit' => 'em', 'size' => 1.4 ) ),
+			),
+			'color',
+			'#8A8177',
+			'center'
+		);
+
+		// Date day abbreviation - `.lt-day`. No alignment control: the span
+		// is a flex item sized to its own content, so text-align never has
+		// a visible effect here.
+		$this->register_text_style_section(
+			'date_day',
+			esc_html__( 'Date Chip: Day Label', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-day',
+			array(
+				'font_family'    => array( 'default' => 'Inter' ),
+				'font_size'      => array( 'default' => array( 'unit' => 'px', 'size' => 11 ) ),
+				'font_weight'    => array( 'default' => '600' ),
+				'text_transform' => array( 'default' => 'uppercase' ),
+				'letter_spacing' => array( 'default' => array( 'unit' => 'em', 'size' => 0.04 ) ),
+			),
+			'color',
+			'#8A8177',
+			null
+		);
+
+		// Date day number - `.lt-day-num`. Same content-sized-box reasoning: no alignment control.
+		$this->register_text_style_section(
+			'date_day_number',
+			esc_html__( 'Date Chip: Day Number', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-day-num',
+			array(
+				'font_family' => array( 'default' => 'Inter' ),
+				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 19 ) ),
+				'font_weight' => array( 'default' => '600' ),
+			),
+			'color',
+			'#2E2A24',
+			null
+		);
+
+		// Time chip - `.lt-time`. Inline-block sized to its own content: no alignment control.
+		$this->register_text_style_section(
+			'time_label',
+			esc_html__( 'Time Chip', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-time',
+			array(
+				'font_family' => array( 'default' => 'Inter' ),
+				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 13.5 ) ),
+				'font_weight' => array( 'default' => '500' ),
+			),
+			'color',
+			'#2E2A24',
+			null
+		);
+
+		// Chart zone label - `.lt-chart-zone` (SVG <text>). No alignment
+		// control: SVG text position is driven by the x/text-anchor
+		// attributes already in the markup, not by CSS text-align.
+		$this->register_text_style_section(
+			'chart_zone_label',
+			esc_html__( 'Chart: Zone Label', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-chart-zone',
+			array(
+				'font_family'    => array( 'default' => 'Inter' ),
+				'font_size'      => array( 'default' => array( 'unit' => 'px', 'size' => 9 ) ),
+				'font_weight'    => array( 'default' => '700' ),
+				'letter_spacing' => array( 'default' => array( 'unit' => 'em', 'size' => 0.04 ) ),
+			),
+			'fill',
+			'#8A8177',
+			null
+		);
+
+		// Chart value label - `.lt-chart-value` (SVG <text>). Same reasoning: no alignment control.
+		$this->register_text_style_section(
+			'chart_value_label',
+			esc_html__( 'Chart: Value Label', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-chart-value',
+			array(
+				'font_family' => array( 'default' => 'Inter' ),
+				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 11 ) ),
+				'font_weight' => array( 'default' => '700' ),
+			),
+			'fill',
+			'#2E2A24',
+			null
+		);
+
+		// Plan item title - `.lt-plan-title`. Sits in a stretched flex
+		// column, so alignment is meaningful here.
+		$this->register_text_style_section(
+			'plan_title',
+			esc_html__( 'Plan Item: Title', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-plan-title',
+			array(
+				'font_family' => array( 'default' => 'Inter' ),
+				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 14.5 ) ),
+				'font_weight' => array( 'default' => '600' ),
+			),
+			'color',
+			'#2E2A24',
+			'left'
+		);
+
+		// Plan item description - `.lt-plan-desc`. Same stretched-column reasoning: alignment is meaningful.
+		$this->register_text_style_section(
+			'plan_desc',
+			esc_html__( 'Plan Item: Description', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-plan-desc',
+			array(
+				'font_family' => array( 'default' => 'Inter' ),
+				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 12.5 ) ),
+			),
+			'color',
+			'#8A8177',
+			'left'
+		);
+	}
+
+	/**
+	 * Register one Style-tab section: optional responsive alignment, text
+	 * color, and a native Group_Control_Typography for a single text role.
+	 *
+	 * @param string                $id             Base control ID, e.g. 'title'.
+	 * @param string                $section_label  Section label shown in the editor.
+	 * @param string                $selector       CSS selector the controls apply to.
+	 * @param array<string, mixed>  $fields_options Group_Control_Typography sub-field default overrides.
+	 * @param string                $color_property CSS property the color control writes: 'color' or 'fill'.
+	 * @param string                $color_default  Default color, matching the original stylesheet.
+	 * @param string|null           $align_default  Default text-align ('left'|'center'|'right'|'justify'),
+	 *                                               or null to omit the alignment control entirely because it
+	 *                                               would have no visible effect on this element.
+	 */
+	private function register_text_style_section(
+		string $id,
+		string $section_label,
+		string $selector,
+		array $fields_options,
+		string $color_property,
+		string $color_default,
+		?string $align_default
+	): void {
+		$this->start_controls_section(
+			"section_style_{$id}",
+			array(
+				'label' => $section_label,
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		if ( null !== $align_default ) {
+			$this->add_responsive_control(
+				"{$id}_align",
+				array(
+					'label'     => esc_html__( 'Alignment', 'lt-process-cards' ),
+					'type'      => Controls_Manager::CHOOSE,
+					'options'   => array(
+						'left'    => array(
+							'title' => esc_html__( 'Left', 'lt-process-cards' ),
+							'icon'  => 'eicon-text-align-left',
+						),
+						'center'  => array(
+							'title' => esc_html__( 'Center', 'lt-process-cards' ),
+							'icon'  => 'eicon-text-align-center',
+						),
+						'right'   => array(
+							'title' => esc_html__( 'Right', 'lt-process-cards' ),
+							'icon'  => 'eicon-text-align-right',
+						),
+						'justify' => array(
+							'title' => esc_html__( 'Justify', 'lt-process-cards' ),
+							'icon'  => 'eicon-text-align-justify',
+						),
+					),
+					'default'   => $align_default,
+					'selectors' => array(
+						$selector => 'text-align: {{VALUE}};',
+					),
+				)
+			);
+		}
+
+		$this->add_control(
+			"{$id}_color",
+			array(
+				'label'     => esc_html__( 'Text Color', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'default'   => $color_default,
+				'selectors' => array(
+					$selector => "{$color_property}: {{VALUE}};",
+				),
+			)
+		);
+
+		$this->add_group_control(
+			Group_Control_Typography::get_type(),
+			array(
+				'name'           => "{$id}_typography",
+				'label'          => esc_html__( 'Typography', 'lt-process-cards' ),
+				'selector'       => $selector,
+				'fields_options' => $fields_options,
 			)
 		);
 
