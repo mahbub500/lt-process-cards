@@ -214,9 +214,17 @@
 	border-radius: 10px;
 }
 
-.lt-plan-icon svg {
+.lt-plan-icon svg,
+.lt-plan-icon img {
 	width: 18px;
 	height: 18px;
+}
+
+/* Font-icon output from the Custom Icon control (Controls_Manager::ICONS) - sized to
+   match the fixed SVGs above so a fresh Font Awesome pick looks consistent by default. */
+.lt-plan-icon i {
+	font-size: 18px;
+	line-height: 1;
 }
 
 .lt-plan-text {

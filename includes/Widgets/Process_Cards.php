@@ -10,7 +10,10 @@ declare( strict_types = 1 );
 namespace LT\ProcessCards\Widgets;
 
 use Elementor\Controls_Manager;
+use Elementor\Group_Control_Background;
+use Elementor\Group_Control_Border;
 use Elementor\Group_Control_Typography;
+use Elementor\Icons_Manager;
 use Elementor\Repeater;
 use Elementor\Widget_Base;
 use LT\ProcessCards\Assets\Assets_Manager;
@@ -36,6 +39,13 @@ final class Process_Cards extends Widget_Base {
 	 * so the "Plan Item Icon" Style-tab color controls can drive them via
 	 * the CSS `color` property on the `.lt-plan-icon` wrapper - the icon's
 	 * default rendered color is unchanged, only how it's driven changes.
+	 *
+	 * This is the rendering fallback for each plan item's `icon_key` preset
+	 * control and stays the default so an untouched widget still renders
+	 * pixel-identical to the original design. Since Step 13, each plan item
+	 * also has a native `Controls_Manager::ICONS` field (`plan_custom_icon`,
+	 * an Elementor icon-library/SVG-upload picker) that, once set, replaces
+	 * one of these three fixed icons - see render_plan_card().
 	 *
 	 * @var array<string, string>
 	 */
@@ -112,6 +122,9 @@ final class Process_Cards extends Widget_Base {
 		$this->register_typography_controls();
 		$this->register_color_controls();
 		$this->register_layout_controls();
+		$this->register_spacing_controls();
+		$this->register_border_controls();
+		$this->register_background_controls();
 	}
 
 	/**
@@ -538,14 +551,28 @@ final class Process_Cards extends Widget_Base {
 		$plan_repeater->add_control(
 			'icon_key',
 			array(
-				'type'    => Controls_Manager::SELECT,
-				'label'   => esc_html__( 'Icon', 'lt-process-cards' ),
-				'options' => array(
+				'type'        => Controls_Manager::SELECT,
+				'label'       => esc_html__( 'Preset Icon', 'lt-process-cards' ),
+				'description' => esc_html__( 'Used only while Custom Icon (below) is empty.', 'lt-process-cards' ),
+				'options'     => array(
 					'nutrition'   => esc_html__( 'Nutrition', 'lt-process-cards' ),
 					'supplements' => esc_html__( 'Supplements', 'lt-process-cards' ),
 					'activity'    => esc_html__( 'Activity', 'lt-process-cards' ),
 				),
-				'default' => 'nutrition',
+				'default'     => 'nutrition',
+			)
+		);
+
+		$plan_repeater->add_control(
+			'plan_custom_icon',
+			array(
+				'type'        => Controls_Manager::ICONS,
+				'label'       => esc_html__( 'Custom Icon', 'lt-process-cards' ),
+				'description' => esc_html__( 'Optional. Pick any icon library icon or upload your own SVG to replace the Preset Icon above.', 'lt-process-cards' ),
+				'default'     => array(
+					'value'   => '',
+					'library' => '',
+				),
 			)
 		);
 
@@ -855,9 +882,15 @@ final class Process_Cards extends Widget_Base {
 	 *
 	 * Step 6 already gave every text role its own Text Color control
 	 * (Heading/Title, Subtitle, labels, etc.) - those aren't repeated here.
-	 * This covers the hard-coded colors Step 6 didn't touch: the shared
-	 * accent/background/border palette, the interactive chip hover state,
-	 * and the plan-item icon (Normal + Hover).
+	 * This covers the hard-coded colors Step 6 didn't touch: the accent
+	 * color (also used as the selected-chip background/border and driven by
+	 * `color_primary`), the interactive chip hover state, and the plan-item
+	 * icon (Normal + Hover). Border color lives in the Border controls
+	 * (Step 10, register_border_controls()) and panel/chip background color
+	 * lives in the Background controls (Step 12, register_background_controls())
+	 * instead of here, so each stays a single native Group_Control_Border /
+	 * Group_Control_Background rather than fighting a second, separate color
+	 * control over the same `border-color` / `background-color` declaration.
 	 *
 	 * Every control writes both a CSS custom property on `{{WRAPPER}}` (for
 	 * forward-compatibility with the real stylesheet once it's ported) and
@@ -906,51 +939,6 @@ final class Process_Cards extends Widget_Base {
 			)
 		);
 
-		$this->add_control(
-			'color_card_background',
-			array(
-				'label'     => esc_html__( 'Card Background Color', 'lt-process-cards' ),
-				'type'      => Controls_Manager::COLOR,
-				'default'   => '#F3ECE1',
-				'selectors' => array(
-					'{{WRAPPER}}'             => '--lt-bg: {{VALUE}};',
-					'{{WRAPPER}} .lt-card'    => 'background-color: {{VALUE}};',
-				),
-			)
-		);
-
-		$this->add_control(
-			'color_item_background',
-			array(
-				'label'       => esc_html__( 'Secondary Background Color', 'lt-process-cards' ),
-				'description' => esc_html__( 'Background of date chips, time chips and plan-item rows.', 'lt-process-cards' ),
-				'type'        => Controls_Manager::COLOR,
-				'default'     => '#ffffff',
-				'selectors'   => array(
-					'{{WRAPPER}}'                 => '--lt-item-bg: {{VALUE}};',
-					'{{WRAPPER}} .lt-date'        => 'background-color: {{VALUE}};',
-					'{{WRAPPER}} .lt-time'        => 'background-color: {{VALUE}};',
-					'{{WRAPPER}} .lt-plan-item'   => 'background-color: {{VALUE}};',
-				),
-			)
-		);
-
-		$this->add_control(
-			'color_border',
-			array(
-				'label'       => esc_html__( 'Border Color', 'lt-process-cards' ),
-				'description' => esc_html__( 'Border of date chips, time chips and plan-item rows.', 'lt-process-cards' ),
-				'type'        => Controls_Manager::COLOR,
-				'default'     => '#E7DDCC',
-				'selectors'   => array(
-					'{{WRAPPER}}'                 => '--lt-border: {{VALUE}};',
-					'{{WRAPPER}} .lt-date'        => 'border-color: {{VALUE}};',
-					'{{WRAPPER}} .lt-time'        => 'border-color: {{VALUE}};',
-					'{{WRAPPER}} .lt-plan-item'   => 'border-color: {{VALUE}};',
-				),
-			)
-		);
-
 		$this->end_controls_section();
 
 		$this->start_controls_section(
@@ -965,7 +953,7 @@ final class Process_Cards extends Widget_Base {
 			'chips_hover_note',
 			array(
 				'type'            => Controls_Manager::RAW_HTML,
-				'raw'             => esc_html__( 'Normal-state background, border and text colors are set in the Colors section above. This section only covers the :hover state, which in the original design lightens the border to the accent color.', 'lt-process-cards' ),
+				'raw'             => esc_html__( 'Normal-state text colors are set in the Colors section above; normal-state background is set in the Background sections below; normal-state border type/width/color are set in the Border sections below. This section only covers the :hover state, which in the original design lightens the border to the accent color.', 'lt-process-cards' ),
 				'content_classes' => 'elementor-descriptor',
 			)
 		);
@@ -1400,6 +1388,520 @@ final class Process_Cards extends Widget_Base {
 	}
 
 	/**
+	 * Register the Style-tab spacing (margin/padding) controls.
+	 *
+	 * Only elements whose spacing is meaningful and safe to expose get a
+	 * control here. Elements laid out via flex `gap` (the cards row, the
+	 * date/time chip rows, the plan list) already have dedicated Gap
+	 * controls from Step 8 and are deliberately skipped - adding margin on
+	 * top of an existing gap would double up spacing and desync the equal
+	 * flex-basis cards. The widget's own outer margin/padding is likewise
+	 * skipped: Elementor's built-in Advanced tab already covers that via
+	 * `{{WRAPPER}}` and duplicating it here would fight the "Alignment"
+	 * control, which already writes `margin` on `.lt-cards-row`.
+	 *
+	 * Every default below is copied verbatim from assets/css/lt-process-cards.css
+	 * so an untouched widget renders pixel-identical to the original markup.
+	 */
+	private function register_spacing_controls(): void {
+		$this->start_controls_section(
+			'section_spacing_card',
+			array(
+				'label' => esc_html__( 'Spacing: Card', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_spacing_control(
+			'spacing_card_padding',
+			esc_html__( 'Card Padding', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-card',
+			'padding',
+			array(
+				'top'    => '32',
+				'right'  => '28',
+				'bottom' => '32',
+				'left'   => '28',
+			)
+		);
+
+		$this->add_spacing_control(
+			'spacing_eyebrow_margin',
+			esc_html__( 'Eyebrow Label Margin', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-num',
+			'margin',
+			array(
+				'top'    => '0',
+				'right'  => '0',
+				'bottom' => '10',
+				'left'   => '0',
+			)
+		);
+
+		$this->add_spacing_control(
+			'spacing_title_margin',
+			esc_html__( 'Title Margin', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-title',
+			'margin',
+			array(
+				'top'    => '0',
+				'right'  => '0',
+				'bottom' => '10',
+				'left'   => '0',
+			)
+		);
+
+		$this->add_spacing_control(
+			'spacing_subtitle_margin',
+			esc_html__( 'Subtitle Margin', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-sub',
+			'margin',
+			array(
+				'top'    => '0',
+				'right'  => '0',
+				'bottom' => '24',
+				'left'   => '0',
+			)
+		);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_spacing_dates_times',
+			array(
+				'label' => esc_html__( 'Spacing: Dates & Times', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_spacing_control(
+			'spacing_dates_wrap_margin',
+			esc_html__( 'Dates Wrapper Margin', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-dates-wrap',
+			'margin',
+			array(
+				'top'    => '0',
+				'right'  => '0',
+				'bottom' => '12',
+				'left'   => '0',
+			)
+		);
+
+		$this->add_spacing_control(
+			'spacing_date_chip_padding',
+			esc_html__( 'Date Chip Padding', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-date',
+			'padding',
+			array(
+				'top'    => '10',
+				'right'  => '4',
+				'bottom' => '10',
+				'left'   => '4',
+			)
+		);
+
+		$this->add_spacing_control(
+			'spacing_times_wrap_margin',
+			esc_html__( 'Times Wrapper Margin', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-times-wrap',
+			'margin',
+			array(
+				'top'    => '4',
+				'right'  => '0',
+				'bottom' => '0',
+				'left'   => '0',
+			)
+		);
+
+		$this->add_spacing_control(
+			'spacing_time_chip_padding',
+			esc_html__( 'Time Chip Padding', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-time',
+			'padding',
+			array(
+				'top'    => '8',
+				'right'  => '14',
+				'bottom' => '8',
+				'left'   => '14',
+			)
+		);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_spacing_plan',
+			array(
+				'label' => esc_html__( 'Spacing: Plan List', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_spacing_control(
+			'spacing_plan_item_padding',
+			esc_html__( 'Plan Item Padding', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-plan-item',
+			'padding',
+			array(
+				'top'    => '14',
+				'right'  => '16',
+				'bottom' => '14',
+				'left'   => '16',
+			)
+		);
+
+		$this->end_controls_section();
+	}
+
+	/**
+	 * Register one responsive `Controls_Manager::DIMENSIONS` control (native
+	 * top/right/bottom/left/unit spacing control, with the built-in
+	 * link/unlink toggle) for a single margin or padding property.
+	 *
+	 * @param string                $id           Control ID.
+	 * @param string                $label        Control label shown in the editor.
+	 * @param string                $selector     CSS selector the control applies to.
+	 * @param string                $css_property Either 'margin' or 'padding'.
+	 * @param array<string, string> $sides        Default 'top'/'right'/'bottom'/'left' values in px,
+	 *                                             copied verbatim from the original stylesheet.
+	 */
+	private function add_spacing_control(
+		string $id,
+		string $label,
+		string $selector,
+		string $css_property,
+		array $sides
+	): void {
+		$this->add_responsive_control(
+			$id,
+			array(
+				'label'      => $label,
+				'type'       => Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', '%', 'em', 'rem' ),
+				'default'    => array(
+					'top'      => $sides['top'],
+					'right'    => $sides['right'],
+					'bottom'   => $sides['bottom'],
+					'left'     => $sides['left'],
+					'unit'     => 'px',
+					'isLinked' => false,
+				),
+				'selectors'  => array(
+					$selector => "{$css_property}: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};",
+				),
+			)
+		);
+	}
+
+	/**
+	 * Register the Style-tab border and border-radius controls.
+	 *
+	 * Only elements that actually render a visible box border in the
+	 * original stylesheet get a full `Group_Control_Border` (type, width,
+	 * color): the date chip, the time chip and the plan-item row. `.lt-card`
+	 * has no border in the original design, so it only gets a Border Radius
+	 * control - adding an unused border-style dropdown to it would be
+	 * exactly the kind of control the design doesn't need. None of the SVG
+	 * chart text elements, the flex wrappers, or the plan icon get border
+	 * controls either, for the same reason: nothing in the original CSS
+	 * draws a border on them.
+	 *
+	 * The chip hover border *color* remains the single control in the
+	 * "Date & Time Chips: Hover" section (Step 6) - only the color changes
+	 * on `:hover` in the original design, so a second full border group for
+	 * that state would expose width/style controls with no effect.
+	 *
+	 * Every default matches assets/css/lt-process-cards.css exactly: solid,
+	 * 1px, #E7DDCC for the chip/item borders, and the original border-radius
+	 * value (12px / 999px / 14px / 20px) for each element.
+	 */
+	private function register_border_controls(): void {
+		$this->start_controls_section(
+			'section_border_card',
+			array(
+				'label' => esc_html__( 'Border: Card', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_border_radius_control(
+			'border_radius_card',
+			esc_html__( 'Card Radius', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-card',
+			array(
+				'top'    => '20',
+				'right'  => '20',
+				'bottom' => '20',
+				'left'   => '20',
+			),
+			true
+		);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_border_chips',
+			array(
+				'label' => esc_html__( 'Border: Date & Time Chips', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_control(
+			'heading_border_date_chip',
+			array(
+				'label' => esc_html__( 'Date Chip', 'lt-process-cards' ),
+				'type'  => Controls_Manager::HEADING,
+			)
+		);
+
+		$this->add_border_control( 'date_chip_border', '{{WRAPPER}} .lt-date', '#E7DDCC' );
+
+		$this->add_border_radius_control(
+			'border_radius_date_chip',
+			esc_html__( 'Date Chip Radius', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-date',
+			array(
+				'top'    => '12',
+				'right'  => '12',
+				'bottom' => '12',
+				'left'   => '12',
+			),
+			true
+		);
+
+		$this->add_control(
+			'heading_border_time_chip',
+			array(
+				'label'     => esc_html__( 'Time Chip', 'lt-process-cards' ),
+				'type'      => Controls_Manager::HEADING,
+				'separator' => 'before',
+			)
+		);
+
+		$this->add_border_control( 'time_chip_border', '{{WRAPPER}} .lt-time', '#E7DDCC' );
+
+		$this->add_border_radius_control(
+			'border_radius_time_chip',
+			esc_html__( 'Time Chip Radius', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-time',
+			array(
+				'top'    => '999',
+				'right'  => '999',
+				'bottom' => '999',
+				'left'   => '999',
+			),
+			true
+		);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_border_plan_item',
+			array(
+				'label' => esc_html__( 'Border: Plan Item', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_border_control( 'plan_item_border', '{{WRAPPER}} .lt-plan-item', '#E7DDCC' );
+
+		$this->add_border_radius_control(
+			'border_radius_plan_item',
+			esc_html__( 'Plan Item Radius', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-plan-item',
+			array(
+				'top'    => '14',
+				'right'  => '14',
+				'bottom' => '14',
+				'left'   => '14',
+			),
+			true
+		);
+
+		$this->end_controls_section();
+	}
+
+	/**
+	 * Register one native `Group_Control_Border` (Border Type, Width and
+	 * Color, each independently responsive) for a single element.
+	 *
+	 * @param string $name          Base control name; Elementor derives
+	 *                              "{$name}_border", "{$name}_width" and
+	 *                              "{$name}_color" from it.
+	 * @param string $selector      CSS selector the border applies to.
+	 * @param string $color_default Default border color, matching the original stylesheet.
+	 */
+	private function add_border_control( string $name, string $selector, string $color_default ): void {
+		$this->add_group_control(
+			Group_Control_Border::get_type(),
+			array(
+				'name'           => $name,
+				'selector'       => $selector,
+				'fields_options' => array(
+					'border' => array(
+						'default' => 'solid',
+					),
+					'width'  => array(
+						'default' => array(
+							'top'      => '1',
+							'right'    => '1',
+							'bottom'   => '1',
+							'left'     => '1',
+							'unit'     => 'px',
+							'isLinked' => true,
+						),
+					),
+					'color'  => array(
+						'default' => $color_default,
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Register one responsive `Controls_Manager::BORDER_RADIUS` control
+	 * (native top-left/top-right/bottom-right/bottom-left corner control,
+	 * with the built-in link/unlink toggle).
+	 *
+	 * @param string                $id       Control ID.
+	 * @param string                $label    Control label shown in the editor.
+	 * @param string                $selector CSS selector the control applies to.
+	 * @param array<string, string> $corners  Default 'top'/'right'/'bottom'/'left' corner values in px
+	 *                                        (top-left/top-right/bottom-right/bottom-left, matching the
+	 *                                        CSS `border-radius` shorthand order), copied verbatim from
+	 *                                        the original stylesheet.
+	 * @param bool                  $linked   Whether the corners start linked in the editor UI. All of
+	 *                                        this widget's original radii are uniform on every corner, so
+	 *                                        callers pass true; kept as a parameter rather than hard-coded
+	 *                                        so a future non-uniform radius doesn't default to a misleading
+	 *                                        linked state.
+	 */
+	private function add_border_radius_control(
+		string $id,
+		string $label,
+		string $selector,
+		array $corners,
+		bool $linked
+	): void {
+		$this->add_responsive_control(
+			$id,
+			array(
+				'label'      => $label,
+				'type'       => Controls_Manager::BORDER_RADIUS,
+				'size_units' => array( 'px', '%' ),
+				'default'    => array(
+					'top'      => $corners['top'],
+					'right'    => $corners['right'],
+					'bottom'   => $corners['bottom'],
+					'left'     => $corners['left'],
+					'unit'     => 'px',
+					'isLinked' => $linked,
+				),
+				'selectors'  => array(
+					$selector => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+	}
+
+	/**
+	 * Register the Style-tab background controls.
+	 *
+	 * The card panel and the item row/chips each get a full native
+	 * `Group_Control_Background` restricted to the "Classic" type (Color,
+	 * Image, Position, Attachment, Repeat, Size) - the original design only
+	 * ever uses a flat background color, but Classic is the smallest native
+	 * control that covers "flat color today, optional background image
+	 * later" without inventing a bespoke one. Gradient is deliberately left
+	 * out of `types`: nothing in the original design uses one, and an unused
+	 * Gradient tab is exactly the kind of unnecessary background feature
+	 * this step is meant to avoid. Video and Slideshow are never offered
+	 * either - they exist for section/container backgrounds, not for a
+	 * widget's internal panels.
+	 *
+	 * There is no overlay control because the original design has no
+	 * image-plus-color-overlay pattern anywhere. The only opacity value in
+	 * the stylesheet, `.lt-date-peek { opacity: 0.45; }`, is a
+	 * disabled/preview chip state, not a background overlay.
+	 *
+	 * The plan-item icon's background (Normal + Hover, registered in
+	 * register_color_controls()) and the selected-chip accent background
+	 * (`color_primary`, also there) are deliberately left as plain Color
+	 * controls rather than upgraded to background groups here: both are
+	 * small state-driven swatches, not background regions, so the extra
+	 * Image/Position/Attachment/Repeat/Size fields a full background group
+	 * would add serve no purpose on them.
+	 *
+	 * Defaults match assets/css/lt-process-cards.css exactly: #F3ECE1 for
+	 * the card, #ffffff for date chips, time chips and plan-item rows -
+	 * identical to the two single-purpose Color controls this replaces
+	 * (`color_card_background`, `color_item_background`, removed from
+	 * register_color_controls() so background color has exactly one
+	 * control, not two competing ones on the same selector).
+	 */
+	private function register_background_controls(): void {
+		$this->start_controls_section(
+			'section_background_card',
+			array(
+				'label' => esc_html__( 'Background: Card', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_background_control( 'card_background', '{{WRAPPER}} .lt-card', '#F3ECE1' );
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_background_items',
+			array(
+				'label' => esc_html__( 'Background: Date & Time Chips, Plan Item', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_background_control(
+			'item_background',
+			'{{WRAPPER}} .lt-date, {{WRAPPER}} .lt-time, {{WRAPPER}} .lt-plan-item',
+			'#ffffff'
+		);
+
+		$this->end_controls_section();
+	}
+
+	/**
+	 * Register one native `Group_Control_Background`, restricted to the
+	 * Classic type, for a single element (or comma-separated group of
+	 * elements sharing one background, e.g. the date/time/plan-item trio).
+	 *
+	 * @param string $name          Base control name; Elementor derives the
+	 *                              background-type toggle plus the Color,
+	 *                              Image, Position, Attachment, Repeat and
+	 *                              Size sub-controls from it.
+	 * @param string $selector      CSS selector(s) the background applies to.
+	 * @param string $color_default Default background color, matching the original stylesheet.
+	 */
+	private function add_background_control( string $name, string $selector, string $color_default ): void {
+		$this->add_group_control(
+			Group_Control_Background::get_type(),
+			array(
+				'name'           => $name,
+				'types'          => array( 'classic' ),
+				'selector'       => $selector,
+				'fields_options' => array(
+					'background' => array(
+						'default' => 'classic',
+					),
+					'color'      => array(
+						'default' => $color_default,
+					),
+				),
+			)
+		);
+	}
+
+	/**
 	 * Render the widget output on the front end.
 	 */
 	protected function render(): void {
@@ -1559,6 +2061,8 @@ final class Process_Cards extends Widget_Base {
 			<ul class="lt-plan-list">
 				<?php foreach ( $plan_items as $item ) : ?>
 					<?php
+					$custom_icon = is_array( $item['plan_custom_icon'] ?? null ) ? $item['plan_custom_icon'] : array();
+
 					$icon_key = (string) ( $item['icon_key'] ?? 'nutrition' );
 					if ( ! in_array( $icon_key, $icon_keys, true ) ) {
 						$icon_key = 'nutrition';
@@ -1566,7 +2070,11 @@ final class Process_Cards extends Widget_Base {
 					?>
 					<li class="lt-plan-item">
 						<span class="lt-plan-icon" aria-hidden="true">
-							<?php echo self::PLAN_ICONS[ $icon_key ]; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed, developer-authored SVG chosen from a closed enum; no user-supplied markup reaches this string. ?>
+							<?php if ( ! empty( $custom_icon['value'] ) ) : ?>
+								<?php Icons_Manager::render_icon( $custom_icon, array( 'aria-hidden' => 'true' ) ); ?>
+							<?php else : ?>
+								<?php echo self::PLAN_ICONS[ $icon_key ]; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed, developer-authored SVG chosen from a closed enum; no user-supplied markup reaches this string. ?>
+							<?php endif; ?>
 						</span>
 						<span class="lt-plan-text">
 							<span class="lt-plan-title"><?php echo esc_html( (string) ( $item['item_title'] ?? '' ) ); ?></span>
