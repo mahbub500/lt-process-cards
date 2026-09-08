@@ -110,9 +110,9 @@ final class Process_Cards extends Widget_Base {
 	 */
 	private function register_card1_booking_controls(): void {
 		$this->start_controls_section(
-			'section_card1',
+			'section_card1_content',
 			array(
-				'label' => esc_html__( 'Card 1: Booking', 'lt-process-cards' ),
+				'label' => esc_html__( 'Card 1: Booking — Heading & Description', 'lt-process-cards' ),
 				'tab'   => Controls_Manager::TAB_CONTENT,
 			)
 		);
@@ -143,6 +143,16 @@ final class Process_Cards extends Widget_Base {
 				'label'   => esc_html__( 'Subtitle', 'lt-process-cards' ),
 				'default' => esc_html__( 'Test at home or at clinic locations.', 'lt-process-cards' ),
 				'rows'    => 2,
+			)
+		);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_card1_dates',
+			array(
+				'label' => esc_html__( 'Card 1: Booking — Dates', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_CONTENT,
 			)
 		);
 
@@ -236,6 +246,16 @@ final class Process_Cards extends Widget_Base {
 			)
 		);
 
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_card1_times',
+			array(
+				'label' => esc_html__( 'Card 1: Booking — Times', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_CONTENT,
+			)
+		);
+
 		$times_repeater = new Repeater();
 
 		$times_repeater->add_control(
@@ -300,9 +320,9 @@ final class Process_Cards extends Widget_Base {
 	 */
 	private function register_card2_results_controls(): void {
 		$this->start_controls_section(
-			'section_card2',
+			'section_card2_content',
 			array(
-				'label' => esc_html__( 'Card 2: Results', 'lt-process-cards' ),
+				'label' => esc_html__( 'Card 2: Results — Heading & Description', 'lt-process-cards' ),
 				'tab'   => Controls_Manager::TAB_CONTENT,
 			)
 		);
@@ -336,6 +356,16 @@ final class Process_Cards extends Widget_Base {
 			)
 		);
 
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_card2_labels',
+			array(
+				'label' => esc_html__( 'Card 2: Results — Chart Labels', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_CONTENT,
+			)
+		);
+
 		$this->add_control(
 			'card2_label_above',
 			array(
@@ -360,6 +390,16 @@ final class Process_Cards extends Widget_Base {
 				'type'    => Controls_Manager::TEXT,
 				'label'   => esc_html__( 'Below-range zone label', 'lt-process-cards' ),
 				'default' => esc_html__( 'BELOW RANGE', 'lt-process-cards' ),
+			)
+		);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_card2_points',
+			array(
+				'label' => esc_html__( 'Card 2: Results — Data Points', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_CONTENT,
 			)
 		);
 
@@ -438,9 +478,9 @@ final class Process_Cards extends Widget_Base {
 	 */
 	private function register_card3_plan_controls(): void {
 		$this->start_controls_section(
-			'section_card3',
+			'section_card3_content',
 			array(
-				'label' => esc_html__( 'Card 3: Plan', 'lt-process-cards' ),
+				'label' => esc_html__( 'Card 3: Plan — Heading & Description', 'lt-process-cards' ),
 				'tab'   => Controls_Manager::TAB_CONTENT,
 			)
 		);
@@ -471,6 +511,16 @@ final class Process_Cards extends Widget_Base {
 				'label'   => esc_html__( 'Subtitle', 'lt-process-cards' ),
 				'default' => esc_html__( 'Take action. Re-test. Adjust plan. Repeat.', 'lt-process-cards' ),
 				'rows'    => 2,
+			)
+		);
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
+			'section_card3_items',
+			array(
+				'label' => esc_html__( 'Card 3: Plan — Plan Items', 'lt-process-cards' ),
+				'tab'   => Controls_Manager::TAB_CONTENT,
 			)
 		);
 
