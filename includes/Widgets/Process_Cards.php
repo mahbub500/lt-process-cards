@@ -1472,6 +1472,19 @@ final class Process_Cards extends Widget_Base {
 			)
 		);
 
+		$this->add_spacing_control(
+			'layout_chart_margin',
+			esc_html__( 'Chart Margin', 'lt-process-cards' ),
+			'{{WRAPPER}} .lt-process-cards__chart',
+			'margin',
+			array(
+				'top'    => '0',
+				'right'  => '10',
+				'bottom' => '0',
+				'left'   => '0',
+			)
+		);
+
 		$this->end_controls_section();
 	}
 
