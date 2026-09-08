@@ -25,10 +25,47 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * The full three-step "Test / Track / Transform" row as a single widget.
  *
- * Reproduces the original markup as one unit: a `.lt-process-cards__row` flex wrapper
- * containing the three `.lt-process-cards__card` panels (booking, results, plan). Content
- * controls are grouped into three sections, one per card, with control IDs
- * prefixed `card1_`, `card2_`, `card3_` to keep them from colliding.
+ * Reproduces the original markup as one unit: a `.lt-process-cards__row` flex
+ * wrapper containing the three `.lt-process-cards__card` panels (booking,
+ * results, plan). See README.md for the full user-facing control reference;
+ * this docblock only orients a maintainer reading the source.
+ *
+ * `register_controls()` composes nine `register_*_controls()` methods, run in
+ * this order:
+ *
+ * 1. `register_card1_booking_controls()` / `register_card2_results_controls()`
+ *    / `register_card3_plan_controls()` - Content tab. Each card's own text
+ *    fields plus its `Repeater` fields (dates, times, chart data points, plan
+ *    items). Control IDs are prefixed `card1_`/`card2_`/`card3_` so the three
+ *    cards' flat settings arrays never collide.
+ * 2. `register_typography_controls()` - Style tab. One section per distinct
+ *    text role (eyebrow, title, subtitle, date-chip day/number, time chip,
+ *    chart zone/value labels, plan title/description), built through the
+ *    shared `register_text_style_section()` helper.
+ * 3. `register_color_controls()` - Style tab. The accent color (also driving
+ *    the selected-chip state) and the plan-item icon's Normal/Hover colors.
+ * 4. `register_layout_controls()` - Style tab. Flex layout properties
+ *    (direction, gap, alignment, sizing) for the row and its interior lists.
+ * 5. `register_spacing_controls()` - Style tab. Margin/padding via the shared
+ *    `add_spacing_control()` helper (native `Controls_Manager::DIMENSIONS`).
+ * 6. `register_border_controls()` - Style tab. Border (type/width/color, via
+ *    `add_border_control()` / `add_border_hover_control()`) and border-radius
+ *    (via `add_border_radius_control()`) for the elements that have one.
+ * 7. `register_background_controls()` - Style tab. Native
+ *    `Group_Control_Background` (Classic type only) via `add_background_control()`.
+ *
+ * Every control this class registers - across all nine methods - writes
+ * selectors prefixed with `{{WRAPPER}}`, which Elementor replaces with a class
+ * unique to that specific widget instance. That is what keeps every one of
+ * these controls instance-safe: two copies of this widget on the same page,
+ * with completely different settings, never affect each other (see README.md
+ * → "Multiple Widget Instances").
+ *
+ * `render()` calls `render_booking_card()` / `render_results_card()` /
+ * `render_plan_card()`, each taking the full settings array. All dynamic
+ * output is escaped at the point it is echoed (`esc_html()`/`esc_attr()`),
+ * never earlier and never twice - see README.md → "Security Considerations"
+ * for the reasoning.
  */
 final class Process_Cards extends Widget_Base {
 
