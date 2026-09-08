@@ -25,8 +25,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * The full three-step "Test / Track / Transform" row as a single widget.
  *
- * Reproduces the original markup as one unit: a `.lt-cards-row` flex wrapper
- * containing the three `.lt-card` panels (booking, results, plan). Content
+ * Reproduces the original markup as one unit: a `.lt-process-cards__row` flex wrapper
+ * containing the three `.lt-process-cards__card` panels (booking, results, plan). Content
  * controls are grouped into three sections, one per card, with control IDs
  * prefixed `card1_`, `card2_`, `card3_` to keep them from colliding.
  */
@@ -37,7 +37,7 @@ final class Process_Cards extends Widget_Base {
 	 *
 	 * Strokes use `currentColor` (rather than the original's literal `#fff`)
 	 * so the "Plan Item Icon" Style-tab color controls can drive them via
-	 * the CSS `color` property on the `.lt-plan-icon` wrapper - the icon's
+	 * the CSS `color` property on the `.lt-process-cards__plan-icon` wrapper - the icon's
 	 * default rendered color is unchanged, only how it's driven changes.
 	 *
 	 * This is the rendering fallback for each plan item's `icon_key` preset
@@ -157,6 +157,8 @@ final class Process_Cards extends Widget_Base {
 				'rows'    => 2,
 			)
 		);
+
+		$this->add_heading_tag_control( 'card1_title_tag' );
 
 		$this->add_control(
 			'card1_subtitle',
@@ -368,6 +370,8 @@ final class Process_Cards extends Widget_Base {
 			)
 		);
 
+		$this->add_heading_tag_control( 'card2_title_tag' );
+
 		$this->add_control(
 			'card2_subtitle',
 			array(
@@ -526,6 +530,8 @@ final class Process_Cards extends Widget_Base {
 			)
 		);
 
+		$this->add_heading_tag_control( 'card3_title_tag' );
+
 		$this->add_control(
 			'card3_subtitle',
 			array(
@@ -624,17 +630,76 @@ final class Process_Cards extends Widget_Base {
 	}
 
 	/**
+	 * Register one "Title HTML Tag" SELECT control (accessibility audit
+	 * finding: heading hierarchy).
+	 *
+	 * The card title was previously a hardcoded `<h3>` in every render
+	 * method, regardless of what heading levels (if any) the surrounding
+	 * page already uses. A page that places this widget directly under its
+	 * own `<h1>` wants an `<h2>` here; a page that nests it under other
+	 * `<h2>` sections wants `<h3>`; either way, the plugin cannot know the
+	 * correct level in advance and should not assume one. Each card gets
+	 * its own independent control - matching how every other piece of that
+	 * card's content (step label, title text, subtitle) is already
+	 * per-card - rather than one control forcing all three cards to match.
+	 *
+	 * Defaults to 'h3' so an untouched widget's markup is unchanged from
+	 * before this control existed.
+	 *
+	 * @param string $id Control ID, e.g. 'card1_title_tag'.
+	 */
+	private function add_heading_tag_control( string $id ): void {
+		$this->add_control(
+			$id,
+			array(
+				'type'    => Controls_Manager::SELECT,
+				'label'   => esc_html__( 'Title HTML Tag', 'lt-process-cards' ),
+				'options' => array(
+					'h1'   => 'H1',
+					'h2'   => 'H2',
+					'h3'   => 'H3',
+					'h4'   => 'H4',
+					'h5'   => 'H5',
+					'h6'   => 'H6',
+					'div'  => 'div',
+					'span' => 'span',
+				),
+				'default' => 'h3',
+			)
+		);
+	}
+
+	/**
+	 * Validate a heading-tag setting against a fixed allow-list before it is
+	 * used to build an HTML tag name.
+	 *
+	 * `Controls_Manager::SELECT` already constrains what the editor UI can
+	 * submit, but a raw settings value should never be trusted to build a
+	 * tag name without a server-side check too - defense in depth against a
+	 * malformed or directly-crafted save request, not a realistic everyday
+	 * scenario.
+	 *
+	 * @param mixed $tag Raw value from widget settings.
+	 */
+	private function sanitize_heading_tag( $tag ): string {
+		$allowed = array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div', 'span' );
+		$tag     = is_string( $tag ) ? $tag : '';
+
+		return in_array( $tag, $allowed, true ) ? $tag : 'h3';
+	}
+
+	/**
 	 * Register the Style-tab typography controls for every distinct text
 	 * role in the design. Every default reproduces the matching rule from
 	 * the original stylesheet (font-family / size / weight / line-height /
 	 * letter-spacing / text-transform / color) exactly.
 	 */
 	private function register_typography_controls(): void {
-		// Eyebrow label - `.lt-num` (identical across all three cards).
+		// Eyebrow label - `.lt-process-cards__eyebrow` (identical across all three cards).
 		$this->register_text_style_section(
 			'eyebrow',
 			esc_html__( 'Eyebrow Label', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-num',
+			'{{WRAPPER}} .lt-process-cards__eyebrow',
 			array(
 				'font_family' => array( 'default' => 'Space Mono' ),
 				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 15 ) ),
@@ -645,11 +710,11 @@ final class Process_Cards extends Widget_Base {
 			'center'
 		);
 
-		// Title - `.lt-title` (identical across all three cards).
+		// Title - `.lt-process-cards__title` (identical across all three cards).
 		$this->register_text_style_section(
 			'title',
 			esc_html__( 'Title', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-title',
+			'{{WRAPPER}} .lt-process-cards__title',
 			array(
 				'font_family' => array( 'default' => 'Playfair Display' ),
 				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 26 ) ),
@@ -661,11 +726,11 @@ final class Process_Cards extends Widget_Base {
 			'center'
 		);
 
-		// Subtitle / description - `.lt-sub` (identical across all three cards).
+		// Subtitle / description - `.lt-process-cards__subtitle` (identical across all three cards).
 		$this->register_text_style_section(
 			'subtitle',
 			esc_html__( 'Subtitle', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-sub',
+			'{{WRAPPER}} .lt-process-cards__subtitle',
 			array(
 				'font_family' => array( 'default' => 'Inter' ),
 				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 14 ) ),
@@ -676,13 +741,13 @@ final class Process_Cards extends Widget_Base {
 			'center'
 		);
 
-		// Date day abbreviation - `.lt-day`. No alignment control: the span
+		// Date day abbreviation - `.lt-process-cards__date-day`. No alignment control: the span
 		// is a flex item sized to its own content, so text-align never has
 		// a visible effect here.
 		$this->register_text_style_section(
 			'date_day',
 			esc_html__( 'Date Chip: Day Label', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-day',
+			'{{WRAPPER}} .lt-process-cards__date-day',
 			array(
 				'font_family'    => array( 'default' => 'Inter' ),
 				'font_size'      => array( 'default' => array( 'unit' => 'px', 'size' => 11 ) ),
@@ -695,11 +760,11 @@ final class Process_Cards extends Widget_Base {
 			null
 		);
 
-		// Date day number - `.lt-day-num`. Same content-sized-box reasoning: no alignment control.
+		// Date day number - `.lt-process-cards__date-day-num`. Same content-sized-box reasoning: no alignment control.
 		$this->register_text_style_section(
 			'date_day_number',
 			esc_html__( 'Date Chip: Day Number', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-day-num',
+			'{{WRAPPER}} .lt-process-cards__date-day-num',
 			array(
 				'font_family' => array( 'default' => 'Inter' ),
 				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 19 ) ),
@@ -710,11 +775,11 @@ final class Process_Cards extends Widget_Base {
 			null
 		);
 
-		// Time chip - `.lt-time`. Inline-block sized to its own content: no alignment control.
+		// Time chip - `.lt-process-cards__time`. Inline-block sized to its own content: no alignment control.
 		$this->register_text_style_section(
 			'time_label',
 			esc_html__( 'Time Chip', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-time',
+			'{{WRAPPER}} .lt-process-cards__time',
 			array(
 				'font_family' => array( 'default' => 'Inter' ),
 				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 13.5 ) ),
@@ -725,13 +790,13 @@ final class Process_Cards extends Widget_Base {
 			null
 		);
 
-		// Chart zone label - `.lt-chart-zone` (SVG <text>). No alignment
+		// Chart zone label - `.lt-process-cards__chart-zone` (SVG <text>). No alignment
 		// control: SVG text position is driven by the x/text-anchor
 		// attributes already in the markup, not by CSS text-align.
 		$this->register_text_style_section(
 			'chart_zone_label',
 			esc_html__( 'Chart: Zone Label', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-chart-zone',
+			'{{WRAPPER}} .lt-process-cards__chart-zone',
 			array(
 				'font_family'    => array( 'default' => 'Inter' ),
 				'font_size'      => array( 'default' => array( 'unit' => 'px', 'size' => 9 ) ),
@@ -743,11 +808,11 @@ final class Process_Cards extends Widget_Base {
 			null
 		);
 
-		// Chart value label - `.lt-chart-value` (SVG <text>). Same reasoning: no alignment control.
+		// Chart value label - `.lt-process-cards__chart-value` (SVG <text>). Same reasoning: no alignment control.
 		$this->register_text_style_section(
 			'chart_value_label',
 			esc_html__( 'Chart: Value Label', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-chart-value',
+			'{{WRAPPER}} .lt-process-cards__chart-value',
 			array(
 				'font_family' => array( 'default' => 'Inter' ),
 				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 11 ) ),
@@ -758,12 +823,12 @@ final class Process_Cards extends Widget_Base {
 			null
 		);
 
-		// Plan item title - `.lt-plan-title`. Sits in a stretched flex
+		// Plan item title - `.lt-process-cards__plan-title`. Sits in a stretched flex
 		// column, so alignment is meaningful here.
 		$this->register_text_style_section(
 			'plan_title',
 			esc_html__( 'Plan Item: Title', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-plan-title',
+			'{{WRAPPER}} .lt-process-cards__plan-title',
 			array(
 				'font_family' => array( 'default' => 'Inter' ),
 				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 14.5 ) ),
@@ -774,11 +839,11 @@ final class Process_Cards extends Widget_Base {
 			'left'
 		);
 
-		// Plan item description - `.lt-plan-desc`. Same stretched-column reasoning: alignment is meaningful.
+		// Plan item description - `.lt-process-cards__plan-desc`. Same stretched-column reasoning: alignment is meaningful.
 		$this->register_text_style_section(
 			'plan_desc',
 			esc_html__( 'Plan Item: Description', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-plan-desc',
+			'{{WRAPPER}} .lt-process-cards__plan-desc',
 			array(
 				'font_family' => array( 'default' => 'Inter' ),
 				'font_size'   => array( 'default' => array( 'unit' => 'px', 'size' => 12.5 ) ),
@@ -923,9 +988,9 @@ final class Process_Cards extends Widget_Base {
 				'type'      => Controls_Manager::COLOR,
 				'default'   => '#AD9771',
 				'selectors' => array(
-					'{{WRAPPER}}'                        => '--lt-accent: {{VALUE}};',
-					'{{WRAPPER}} .lt-date.is-selected'   => 'background-color: {{VALUE}}; border-color: {{VALUE}};',
-					'{{WRAPPER}} .lt-time.is-selected'   => 'background-color: {{VALUE}}; border-color: {{VALUE}};',
+					'{{WRAPPER}}' => '--lt-process-cards-accent: {{VALUE}};',
+					'{{WRAPPER}} .lt-process-cards__date.lt-process-cards__date--selected' => 'background-color: {{VALUE}}; border-color: {{VALUE}};',
+					'{{WRAPPER}} .lt-process-cards__time.lt-process-cards__time--selected' => 'background-color: {{VALUE}}; border-color: {{VALUE}};',
 				),
 			)
 		);
@@ -933,14 +998,14 @@ final class Process_Cards extends Widget_Base {
 		$this->add_control(
 			'color_accent_text',
 			array(
-				'label'     => esc_html__( 'Accent Text Color', 'lt-process-cards' ),
+				'label'       => esc_html__( 'Accent Text Color', 'lt-process-cards' ),
 				'description' => esc_html__( 'Text color used on top of the primary/accent color, e.g. a selected date or time chip.', 'lt-process-cards' ),
-				'type'      => Controls_Manager::COLOR,
-				'default'   => '#ffffff',
-				'selectors' => array(
-					'{{WRAPPER}}' => '--lt-accent-text: {{VALUE}};',
-					'{{WRAPPER}} .lt-date.is-selected .lt-day, {{WRAPPER}} .lt-date.is-selected .lt-day-num' => 'color: {{VALUE}};',
-					'{{WRAPPER}} .lt-time.is-selected' => 'color: {{VALUE}};',
+				'type'        => Controls_Manager::COLOR,
+				'default'     => '#ffffff',
+				'selectors'   => array(
+					'{{WRAPPER}}' => '--lt-process-cards-accent-text: {{VALUE}};',
+					'{{WRAPPER}} .lt-process-cards__date.lt-process-cards__date--selected .lt-process-cards__date-day, {{WRAPPER}} .lt-process-cards__date.lt-process-cards__date--selected .lt-process-cards__date-day-num' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .lt-process-cards__time.lt-process-cards__time--selected' => 'color: {{VALUE}};',
 				),
 			)
 		);
@@ -970,7 +1035,7 @@ final class Process_Cards extends Widget_Base {
 				'type'      => Controls_Manager::COLOR,
 				'default'   => '#AD9771',
 				'selectors' => array(
-					'{{WRAPPER}} .lt-plan-icon' => 'background-color: {{VALUE}};',
+					'{{WRAPPER}} .lt-process-cards__plan-icon' => 'background-color: {{VALUE}};',
 				),
 			)
 		);
@@ -982,7 +1047,7 @@ final class Process_Cards extends Widget_Base {
 				'type'      => Controls_Manager::COLOR,
 				'default'   => '#ffffff',
 				'selectors' => array(
-					'{{WRAPPER}} .lt-plan-icon' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .lt-process-cards__plan-icon' => 'color: {{VALUE}};',
 				),
 			)
 		);
@@ -1012,7 +1077,7 @@ final class Process_Cards extends Widget_Base {
 				'type'      => Controls_Manager::COLOR,
 				'default'   => '#AD9771',
 				'selectors' => array(
-					'{{WRAPPER}} .lt-plan-item:hover .lt-plan-icon' => 'background-color: {{VALUE}};',
+					'{{WRAPPER}} .lt-process-cards__plan-item:hover .lt-process-cards__plan-icon' => 'background-color: {{VALUE}};',
 				),
 			)
 		);
@@ -1024,7 +1089,7 @@ final class Process_Cards extends Widget_Base {
 				'type'      => Controls_Manager::COLOR,
 				'default'   => '#ffffff',
 				'selectors' => array(
-					'{{WRAPPER}} .lt-plan-item:hover .lt-plan-icon' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .lt-process-cards__plan-item:hover .lt-process-cards__plan-icon' => 'color: {{VALUE}};',
 				),
 			)
 		);
@@ -1041,9 +1106,18 @@ final class Process_Cards extends Widget_Base {
 	 * container here only works because it's a flex container, so each
 	 * control's own selector always re-asserts `display: flex` alongside
 	 * whatever it lets the user adjust, rather than letting a raw Display
-	 * dropdown break that assumption. `min-width: 0` on `.lt-card` (an
+	 * dropdown break that assumption. `min-width: 0` on `.lt-process-cards__card` (an
 	 * anti-overflow fix, not a preference) and `position` (unused anywhere
 	 * in the original design) are deliberately not exposed as controls.
+	 *
+	 * `layout_flex_direction` is the one property the original stylesheet
+	 * actually changes per breakpoint (`@media (max-width: 767px)` stacks
+	 * the row). Step 15's responsive audit found this control had also been
+	 * given a `tablet_default => 'column'`, which stacked the row on Tablet
+	 * (768-1024px) too - a breakpoint the original CSS never touches. That
+	 * default was removed so Tablet correctly inherits Desktop's 'row' and
+	 * only Mobile (Elementor's default 767px breakpoint, matching the
+	 * original media query exactly) stacks by default.
 	 */
 	private function register_layout_controls(): void {
 		$this->start_controls_section(
@@ -1075,7 +1149,7 @@ final class Process_Cards extends Widget_Base {
 					'size' => 1200,
 				),
 				'selectors'  => array(
-					'{{WRAPPER}} .lt-cards-row' => 'max-width: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .lt-process-cards__row' => 'max-width: {{SIZE}}{{UNIT}};',
 				),
 			)
 		);
@@ -1106,7 +1180,7 @@ final class Process_Cards extends Widget_Base {
 					'right'  => '0 0 0 auto',
 				),
 				'selectors'            => array(
-					'{{WRAPPER}} .lt-cards-row' => 'margin: {{VALUE}};',
+					'{{WRAPPER}} .lt-process-cards__row' => 'margin: {{VALUE}};',
 				),
 			)
 		);
@@ -1114,9 +1188,9 @@ final class Process_Cards extends Widget_Base {
 		$this->add_responsive_control(
 			'layout_flex_direction',
 			array(
-				'label'         => esc_html__( 'Flex Direction', 'lt-process-cards' ),
-				'type'          => Controls_Manager::CHOOSE,
-				'options'       => array(
+				'label'          => esc_html__( 'Flex Direction', 'lt-process-cards' ),
+				'type'           => Controls_Manager::CHOOSE,
+				'options'        => array(
 					'row'    => array(
 						'title' => esc_html__( 'Row (side by side)', 'lt-process-cards' ),
 						'icon'  => 'eicon-arrow-right',
@@ -1126,11 +1200,14 @@ final class Process_Cards extends Widget_Base {
 						'icon'  => 'eicon-arrow-down',
 					),
 				),
-				'default'       => 'row',
-				'tablet_default' => 'column',
+				'default'        => 'row',
+				// No 'tablet_default': the original stylesheet's only media query
+				// (`@media (max-width: 767px)`) stacks the row at the Mobile
+				// breakpoint alone, so Tablet correctly inherits Desktop's 'row'
+				// unless a user chooses otherwise (Step 15 responsive audit).
 				'mobile_default' => 'column',
-				'selectors'     => array(
-					'{{WRAPPER}} .lt-cards-row' => 'display: flex; flex-direction: {{VALUE}};',
+				'selectors'      => array(
+					'{{WRAPPER}} .lt-process-cards__row' => 'display: flex; flex-direction: {{VALUE}};',
 				),
 			)
 		);
@@ -1152,7 +1229,7 @@ final class Process_Cards extends Widget_Base {
 					'size' => 20,
 				),
 				'selectors'  => array(
-					'{{WRAPPER}} .lt-cards-row' => 'gap: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .lt-process-cards__row' => 'gap: {{SIZE}}{{UNIT}};',
 				),
 			)
 		);
@@ -1182,7 +1259,7 @@ final class Process_Cards extends Widget_Base {
 				),
 				'default'   => 'stretch',
 				'selectors' => array(
-					'{{WRAPPER}} .lt-cards-row' => 'align-items: {{VALUE}};',
+					'{{WRAPPER}} .lt-process-cards__row' => 'align-items: {{VALUE}};',
 				),
 			)
 		);
@@ -1214,7 +1291,7 @@ final class Process_Cards extends Widget_Base {
 					'size' => 10,
 				),
 				'selectors'  => array(
-					'{{WRAPPER}} .lt-dates' => 'display: flex; justify-content: center; gap: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .lt-process-cards__dates' => 'display: flex; justify-content: center; gap: {{SIZE}}{{UNIT}};',
 				),
 			)
 		);
@@ -1236,7 +1313,7 @@ final class Process_Cards extends Widget_Base {
 					'size' => 8,
 				),
 				'selectors'  => array(
-					'{{WRAPPER}} .lt-times' => 'display: flex; justify-content: center; gap: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .lt-process-cards__times' => 'display: flex; justify-content: center; gap: {{SIZE}}{{UNIT}};',
 				),
 			)
 		);
@@ -1268,7 +1345,7 @@ final class Process_Cards extends Widget_Base {
 					'size' => 10,
 				),
 				'selectors'  => array(
-					'{{WRAPPER}} .lt-plan-list' => 'display: flex; flex-direction: column; gap: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .lt-process-cards__plan-list' => 'display: flex; flex-direction: column; gap: {{SIZE}}{{UNIT}};',
 				),
 			)
 		);
@@ -1290,7 +1367,7 @@ final class Process_Cards extends Widget_Base {
 					'size' => 14,
 				),
 				'selectors'  => array(
-					'{{WRAPPER}} .lt-plan-item' => 'display: flex; align-items: center; gap: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .lt-process-cards__plan-item' => 'display: flex; align-items: center; gap: {{SIZE}}{{UNIT}};',
 				),
 			)
 		);
@@ -1312,7 +1389,7 @@ final class Process_Cards extends Widget_Base {
 					'size' => 40,
 				),
 				'selectors'  => array(
-					'{{WRAPPER}} .lt-plan-icon' => 'display: flex; align-items: center; justify-content: center; width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .lt-process-cards__plan-icon' => 'display: flex; align-items: center; justify-content: center; width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};',
 				),
 			)
 		);
@@ -1353,7 +1430,7 @@ final class Process_Cards extends Widget_Base {
 					'right'  => 'flex-end',
 				),
 				'selectors'            => array(
-					'{{WRAPPER}} .lt-chart' => 'display: flex; justify-content: {{VALUE}};',
+					'{{WRAPPER}} .lt-process-cards__chart' => 'display: flex; justify-content: {{VALUE}};',
 				),
 			)
 		);
@@ -1372,7 +1449,7 @@ final class Process_Cards extends Widget_Base {
 	 * flex-basis cards. The widget's own outer margin/padding is likewise
 	 * skipped: Elementor's built-in Advanced tab already covers that via
 	 * `{{WRAPPER}}` and duplicating it here would fight the "Alignment"
-	 * control, which already writes `margin` on `.lt-cards-row`.
+	 * control, which already writes `margin` on `.lt-process-cards__row`.
 	 *
 	 * Every default below is copied verbatim from assets/css/lt-process-cards.css
 	 * so an untouched widget renders pixel-identical to the original markup.
@@ -1389,7 +1466,7 @@ final class Process_Cards extends Widget_Base {
 		$this->add_spacing_control(
 			'spacing_card_padding',
 			esc_html__( 'Card Padding', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-card',
+			'{{WRAPPER}} .lt-process-cards__card',
 			'padding',
 			array(
 				'top'    => '32',
@@ -1402,7 +1479,7 @@ final class Process_Cards extends Widget_Base {
 		$this->add_spacing_control(
 			'spacing_eyebrow_margin',
 			esc_html__( 'Eyebrow Label Margin', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-num',
+			'{{WRAPPER}} .lt-process-cards__eyebrow',
 			'margin',
 			array(
 				'top'    => '0',
@@ -1415,7 +1492,7 @@ final class Process_Cards extends Widget_Base {
 		$this->add_spacing_control(
 			'spacing_title_margin',
 			esc_html__( 'Title Margin', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-title',
+			'{{WRAPPER}} .lt-process-cards__title',
 			'margin',
 			array(
 				'top'    => '0',
@@ -1428,7 +1505,7 @@ final class Process_Cards extends Widget_Base {
 		$this->add_spacing_control(
 			'spacing_subtitle_margin',
 			esc_html__( 'Subtitle Margin', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-sub',
+			'{{WRAPPER}} .lt-process-cards__subtitle',
 			'margin',
 			array(
 				'top'    => '0',
@@ -1451,7 +1528,7 @@ final class Process_Cards extends Widget_Base {
 		$this->add_spacing_control(
 			'spacing_dates_wrap_margin',
 			esc_html__( 'Dates Wrapper Margin', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-dates-wrap',
+			'{{WRAPPER}} .lt-process-cards__dates-wrap',
 			'margin',
 			array(
 				'top'    => '0',
@@ -1464,7 +1541,7 @@ final class Process_Cards extends Widget_Base {
 		$this->add_spacing_control(
 			'spacing_date_chip_padding',
 			esc_html__( 'Date Chip Padding', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-date',
+			'{{WRAPPER}} .lt-process-cards__date',
 			'padding',
 			array(
 				'top'    => '10',
@@ -1477,7 +1554,7 @@ final class Process_Cards extends Widget_Base {
 		$this->add_spacing_control(
 			'spacing_times_wrap_margin',
 			esc_html__( 'Times Wrapper Margin', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-times-wrap',
+			'{{WRAPPER}} .lt-process-cards__times-wrap',
 			'margin',
 			array(
 				'top'    => '4',
@@ -1490,7 +1567,7 @@ final class Process_Cards extends Widget_Base {
 		$this->add_spacing_control(
 			'spacing_time_chip_padding',
 			esc_html__( 'Time Chip Padding', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-time',
+			'{{WRAPPER}} .lt-process-cards__time',
 			'padding',
 			array(
 				'top'    => '8',
@@ -1513,7 +1590,7 @@ final class Process_Cards extends Widget_Base {
 		$this->add_spacing_control(
 			'spacing_plan_item_padding',
 			esc_html__( 'Plan Item Padding', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-plan-item',
+			'{{WRAPPER}} .lt-process-cards__plan-item',
 			'padding',
 			array(
 				'top'    => '14',
@@ -1571,7 +1648,7 @@ final class Process_Cards extends Widget_Base {
 	 *
 	 * Only elements that actually render a visible box border in the
 	 * original stylesheet get a full `Group_Control_Border` (type, width,
-	 * color): the date chip, the time chip and the plan-item row. `.lt-card`
+	 * color): the date chip, the time chip and the plan-item row. `.lt-process-cards__card`
 	 * has no border in the original design, so it only gets a Border Radius
 	 * control - adding an unused border-style dropdown to it would be
 	 * exactly the kind of control the design doesn't need. None of the SVG
@@ -1586,7 +1663,7 @@ final class Process_Cards extends Widget_Base {
 	 * group for the Hover tab would expose width/style controls with no
 	 * effect. The Hover tab is therefore just the one property that
 	 * actually changes, plus the transition duration that drives it
-	 * (0.15s in the original CSS). `.lt-plan-item` has no `:hover` rule in
+	 * (0.15s in the original CSS). `.lt-process-cards__plan-item` has no `:hover` rule in
 	 * the original design at all, so it gets no Hover tab.
 	 *
 	 * Every default matches assets/css/lt-process-cards.css exactly: solid,
@@ -1606,7 +1683,7 @@ final class Process_Cards extends Widget_Base {
 		$this->add_border_radius_control(
 			'border_radius_card',
 			esc_html__( 'Card Radius', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-card',
+			'{{WRAPPER}} .lt-process-cards__card',
 			array(
 				'top'    => '20',
 				'right'  => '20',
@@ -1636,8 +1713,8 @@ final class Process_Cards extends Widget_Base {
 
 		$this->add_border_hover_control(
 			'date_chip',
-			'{{WRAPPER}} .lt-date',
-			'{{WRAPPER}} .lt-date:hover',
+			'{{WRAPPER}} .lt-process-cards__date',
+			'{{WRAPPER}} .lt-process-cards__date:hover, {{WRAPPER}} .lt-process-cards__date:focus-visible',
 			'#E7DDCC',
 			'#AD9771'
 		);
@@ -1645,7 +1722,7 @@ final class Process_Cards extends Widget_Base {
 		$this->add_border_radius_control(
 			'border_radius_date_chip',
 			esc_html__( 'Date Chip Radius', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-date',
+			'{{WRAPPER}} .lt-process-cards__date',
 			array(
 				'top'    => '12',
 				'right'  => '12',
@@ -1666,8 +1743,8 @@ final class Process_Cards extends Widget_Base {
 
 		$this->add_border_hover_control(
 			'time_chip',
-			'{{WRAPPER}} .lt-time',
-			'{{WRAPPER}} .lt-time:hover:not(.is-disabled)',
+			'{{WRAPPER}} .lt-process-cards__time',
+			'{{WRAPPER}} .lt-process-cards__time:hover:not(.lt-process-cards__time--disabled), {{WRAPPER}} .lt-process-cards__time:focus-visible:not(.lt-process-cards__time--disabled)',
 			'#E7DDCC',
 			'#AD9771'
 		);
@@ -1675,7 +1752,7 @@ final class Process_Cards extends Widget_Base {
 		$this->add_border_radius_control(
 			'border_radius_time_chip',
 			esc_html__( 'Time Chip Radius', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-time',
+			'{{WRAPPER}} .lt-process-cards__time',
 			array(
 				'top'    => '999',
 				'right'  => '999',
@@ -1695,12 +1772,12 @@ final class Process_Cards extends Widget_Base {
 			)
 		);
 
-		$this->add_border_control( 'plan_item_border', '{{WRAPPER}} .lt-plan-item', '#E7DDCC' );
+		$this->add_border_control( 'plan_item_border', '{{WRAPPER}} .lt-process-cards__plan-item', '#E7DDCC' );
 
 		$this->add_border_radius_control(
 			'border_radius_plan_item',
 			esc_html__( 'Plan Item Radius', 'lt-process-cards' ),
-			'{{WRAPPER}} .lt-plan-item',
+			'{{WRAPPER}} .lt-process-cards__plan-item',
 			array(
 				'top'    => '14',
 				'right'  => '14',
@@ -1767,9 +1844,12 @@ final class Process_Cards extends Widget_Base {
 	 *                                 (see add_border_control()) and the prefix for the two
 	 *                                 Hover-tab control IDs derived from it.
 	 * @param string $normal_selector  CSS selector for the element's resting state.
-	 * @param string $hover_selector   CSS selector for the element's `:hover` state.
+	 * @param string $hover_selector   CSS selector(s) for the element's interactive-feedback
+	 *                                 state - `:hover`, comma-combined with `:focus-visible` by
+	 *                                 every caller so keyboard focus gets the same visible
+	 *                                 feedback as mouse hover (accessibility audit finding).
 	 * @param string $border_default   Default Normal-state border color, matching the original stylesheet.
-	 * @param string $hover_default    Default Hover-state border color, matching the original stylesheet.
+	 * @param string $hover_default    Default Hover/Focus-state border color, matching the original stylesheet.
 	 */
 	private function add_border_hover_control(
 		string $name,
@@ -1839,9 +1919,12 @@ final class Process_Cards extends Widget_Base {
 	}
 
 	/**
-	 * Register one responsive `Controls_Manager::BORDER_RADIUS` control
-	 * (native top-left/top-right/bottom-right/bottom-left corner control,
-	 * with the built-in link/unlink toggle).
+	 * Register one responsive border-radius control: a `Controls_Manager::DIMENSIONS`
+	 * control (native top-left/top-right/bottom-right/bottom-left corner
+	 * control, with the built-in link/unlink toggle) whose selector writes
+	 * `border-radius` instead of `margin`/`padding`. Elementor has no
+	 * separate "border radius" control type - core widgets (e.g. Icon Box,
+	 * Image) use this same DIMENSIONS-plus-border-radius-selector pattern.
 	 *
 	 * @param string                $id       Control ID.
 	 * @param string                $label    Control label shown in the editor.
@@ -1867,7 +1950,7 @@ final class Process_Cards extends Widget_Base {
 			$id,
 			array(
 				'label'      => $label,
-				'type'       => Controls_Manager::BORDER_RADIUS,
+				'type'       => Controls_Manager::DIMENSIONS,
 				'size_units' => array( 'px', '%' ),
 				'default'    => array(
 					'top'      => $corners['top'],
@@ -1901,7 +1984,7 @@ final class Process_Cards extends Widget_Base {
 	 *
 	 * There is no overlay control because the original design has no
 	 * image-plus-color-overlay pattern anywhere. The only opacity value in
-	 * the stylesheet, `.lt-date-peek { opacity: 0.45; }`, is a
+	 * the stylesheet, `.lt-process-cards__date--peek { opacity: 0.45; }`, is a
 	 * disabled/preview chip state, not a background overlay.
 	 *
 	 * The plan-item icon's background (Normal + Hover, registered in
@@ -1928,7 +2011,7 @@ final class Process_Cards extends Widget_Base {
 			)
 		);
 
-		$this->add_background_control( 'card_background', '{{WRAPPER}} .lt-card', '#F3ECE1' );
+		$this->add_background_control( 'card_background', '{{WRAPPER}} .lt-process-cards__card', '#F3ECE1' );
 
 		$this->end_controls_section();
 
@@ -1942,7 +2025,7 @@ final class Process_Cards extends Widget_Base {
 
 		$this->add_background_control(
 			'item_background',
-			'{{WRAPPER}} .lt-date, {{WRAPPER}} .lt-time, {{WRAPPER}} .lt-plan-item',
+			'{{WRAPPER}} .lt-process-cards__date, {{WRAPPER}} .lt-process-cards__time, {{WRAPPER}} .lt-process-cards__plan-item',
 			'#ffffff'
 		);
 
@@ -1986,7 +2069,7 @@ final class Process_Cards extends Widget_Base {
 	protected function render(): void {
 		$settings = $this->get_settings_for_display();
 		?>
-		<div class="lt-cards-row">
+		<div class="lt-process-cards__row">
 			<?php $this->render_booking_card( $settings ); ?>
 			<?php $this->render_results_card( $settings ); ?>
 			<?php $this->render_plan_card( $settings ); ?>
@@ -2000,63 +2083,72 @@ final class Process_Cards extends Widget_Base {
 	 * @param array<string, mixed> $settings Widget settings for display.
 	 */
 	private function render_booking_card( array $settings ): void {
-		$dates = is_array( $settings['card1_dates'] ?? null ) ? $settings['card1_dates'] : array();
-		$times = is_array( $settings['card1_times'] ?? null ) ? $settings['card1_times'] : array();
+		$dates     = is_array( $settings['card1_dates'] ?? null ) ? $settings['card1_dates'] : array();
+		$times     = is_array( $settings['card1_times'] ?? null ) ? $settings['card1_times'] : array();
+		$title_tag = $this->sanitize_heading_tag( $settings['card1_title_tag'] ?? 'h3' );
 		?>
-		<div class="lt-card lt-process-card lt-process-card--booking">
-			<p class="lt-num"><?php echo esc_html( (string) $settings['card1_step_label'] ); ?></p>
-			<h3 class="lt-title"><?php echo esc_html( (string) $settings['card1_title'] ); ?></h3>
-			<p class="lt-sub"><?php echo esc_html( (string) $settings['card1_subtitle'] ); ?></p>
+		<div class="lt-process-cards__card lt-process-cards__card--booking">
+			<p class="lt-process-cards__eyebrow"><?php echo esc_html( (string) $settings['card1_step_label'] ); ?></p>
+			<<?php echo esc_html( $title_tag ); ?> class="lt-process-cards__title"><?php echo esc_html( (string) $settings['card1_title'] ); ?></<?php echo esc_html( $title_tag ); ?>>
+			<p class="lt-process-cards__subtitle"><?php echo esc_html( (string) $settings['card1_subtitle'] ); ?></p>
 
-			<div class="lt-dates-wrap">
-				<div class="lt-dates" role="tablist" aria-label="<?php esc_attr_e( 'Select a date', 'lt-process-cards' ); ?>">
+			<div class="lt-process-cards__dates-wrap">
+				<?php /* role="radiogroup"/"radio" (not "tablist"/"button" - accessibility audit finding: those roles require a tabpanel per tab and don't exist for a single-choice group like this). */ ?>
+				<div class="lt-process-cards__dates" role="radiogroup" aria-label="<?php esc_attr_e( 'Select a date', 'lt-process-cards' ); ?>">
 					<?php foreach ( $dates as $date ) : ?>
 						<?php
 						$state       = (string) ( $date['state'] ?? 'normal' );
 						$is_selected = 'selected' === $state;
 						$is_peek     = 'peek' === $state;
 
-						$classes = array( 'lt-date' );
+						$classes = array( 'lt-process-cards__date' );
 						if ( $is_selected ) {
-							$classes[] = 'is-selected';
+							$classes[] = 'lt-process-cards__date--selected';
 						}
 						if ( $is_peek ) {
-							$classes[] = 'lt-date-peek';
+							$classes[] = 'lt-process-cards__date--peek';
 						}
+
+						// A "peek" date is a non-interactive, partially-visible preview chip, not a
+						// real choice - hidden from assistive tech entirely (aria-hidden) rather than
+						// announced as an unlabelled/disabled radio option (accessibility audit finding).
 						?>
 						<div
 							class="<?php echo esc_attr( implode( ' ', $classes ) ); ?>"
-							role="button"
+							role="radio"
+							aria-checked="<?php echo esc_attr( $is_selected ? 'true' : 'false' ); ?>"
+							aria-hidden="<?php echo esc_attr( $is_peek ? 'true' : 'false' ); ?>"
 							tabindex="<?php echo esc_attr( $is_peek ? '-1' : '0' ); ?>"
 							data-day="<?php echo esc_attr( (string) ( $date['day_label'] ?? '' ) ); ?>"
 							data-num="<?php echo esc_attr( (string) ( $date['data_num'] ?? '' ) ); ?>"
 						>
-							<span class="lt-day"><?php echo esc_html( (string) ( $date['day_label'] ?? '' ) ); ?></span><span class="lt-day-num"><?php echo esc_html( (string) ( $date['day_number'] ?? '' ) ); ?></span>
+							<span class="lt-process-cards__date-day"><?php echo esc_html( (string) ( $date['day_label'] ?? '' ) ); ?></span> <span class="lt-process-cards__date-day-num"><?php echo esc_html( (string) ( $date['day_number'] ?? '' ) ); ?></span>
 						</div>
 					<?php endforeach; ?>
 				</div>
 			</div>
 
-			<div class="lt-times-wrap">
-				<div class="lt-times" role="tablist" aria-label="<?php esc_attr_e( 'Select a time', 'lt-process-cards' ); ?>">
+			<div class="lt-process-cards__times-wrap">
+				<div class="lt-process-cards__times" role="radiogroup" aria-label="<?php esc_attr_e( 'Select a time', 'lt-process-cards' ); ?>">
 					<?php foreach ( $times as $time ) : ?>
 						<?php
 						$state       = (string) ( $time['state'] ?? 'normal' );
 						$is_selected = 'selected' === $state;
 						$is_disabled = 'disabled' === $state;
 
-						$classes = array( 'lt-time' );
+						$classes = array( 'lt-process-cards__time' );
 						if ( $is_selected ) {
-							$classes[] = 'is-selected';
+							$classes[] = 'lt-process-cards__time--selected';
 						}
 						if ( $is_disabled ) {
-							$classes[] = 'is-disabled';
+							$classes[] = 'lt-process-cards__time--disabled';
 						}
 						?>
 						<?php if ( $is_disabled ) : ?>
 						<div
 							class="<?php echo esc_attr( implode( ' ', $classes ) ); ?>"
-							role="button"
+							role="radio"
+							aria-checked="false"
 							aria-disabled="true"
 						>
 							<?php echo esc_html( (string) ( $time['time_label'] ?? '' ) ); ?>
@@ -2064,7 +2156,8 @@ final class Process_Cards extends Widget_Base {
 						<?php else : ?>
 						<div
 							class="<?php echo esc_attr( implode( ' ', $classes ) ); ?>"
-							role="button"
+							role="radio"
+							aria-checked="<?php echo esc_attr( $is_selected ? 'true' : 'false' ); ?>"
 							tabindex="0"
 						>
 							<?php echo esc_html( (string) ( $time['time_label'] ?? '' ) ); ?>
@@ -2083,22 +2176,74 @@ final class Process_Cards extends Widget_Base {
 	 * @param array<string, mixed> $settings Widget settings for display.
 	 */
 	private function render_results_card( array $settings ): void {
-		$points = is_array( $settings['card2_chart_points'] ?? null ) ? $settings['card2_chart_points'] : array();
-		?>
-		<div class="lt-card lt-process-card lt-process-card--results">
-			<p class="lt-num"><?php echo esc_html( (string) $settings['card2_step_label'] ); ?></p>
-			<h3 class="lt-title"><?php echo esc_html( (string) $settings['card2_title'] ); ?></h3>
-			<p class="lt-sub"><?php echo esc_html( (string) $settings['card2_subtitle'] ); ?></p>
+		$points    = is_array( $settings['card2_chart_points'] ?? null ) ? $settings['card2_chart_points'] : array();
+		$title_tag = $this->sanitize_heading_tag( $settings['card2_title_tag'] ?? 'h3' );
 
-			<div class="lt-chart">
-				<svg viewBox="0 0 260 145" class="lt-chart-svg" preserveAspectRatio="xMinYMid meet" role="img" aria-label="<?php echo esc_attr( (string) $settings['card2_title'] ); ?>">
+		/*
+		 * Accessibility audit finding: `role="img"` on an SVG makes assistive
+		 * tech treat the whole subtree as one opaque image described only by
+		 * `aria-label`, silently discarding the zone-label and value <text>
+		 * nodes actually drawn inside it - real data, not decoration. Fix:
+		 * hide the SVG from assistive tech entirely (`aria-hidden="true"`,
+		 * below) and expose the same data as an ordinary, linearly-readable
+		 * sentence instead, built from the same settings used to draw it.
+		 */
+		$summary_parts = array();
+
+		$zone_labels = array_values(
+			array_filter(
+				array(
+					(string) ( $settings['card2_label_above'] ?? '' ),
+					(string) ( $settings['card2_label_in_range'] ?? '' ),
+					(string) ( $settings['card2_label_below'] ?? '' ),
+				),
+				static fn( string $label ): bool => '' !== $label
+			)
+		);
+
+		if ( ! empty( $zone_labels ) ) {
+			$summary_parts[] = sprintf(
+				/* translators: %s: comma-separated list of the chart's reference range labels, top to bottom. */
+				__( 'Reference ranges, top to bottom: %s.', 'lt-process-cards' ),
+				implode( ', ', $zone_labels )
+			);
+		}
+
+		$point_values = array();
+		foreach ( $points as $point ) {
+			$value = (string) ( $point['point_value'] ?? '' );
+			if ( '' !== $value ) {
+				$point_values[] = $value;
+			}
+		}
+
+		if ( ! empty( $point_values ) ) {
+			$summary_parts[] = sprintf(
+				/* translators: %s: comma-separated list of the chart's data point values, in order. */
+				__( 'Data points, in order: %s.', 'lt-process-cards' ),
+				implode( ', ', $point_values )
+			);
+		}
+
+		$chart_summary = trim( (string) $settings['card2_title'] . '. ' . implode( ' ', $summary_parts ) );
+		?>
+		<div class="lt-process-cards__card lt-process-cards__card--results">
+			<p class="lt-process-cards__eyebrow"><?php echo esc_html( (string) $settings['card2_step_label'] ); ?></p>
+			<<?php echo esc_html( $title_tag ); ?> class="lt-process-cards__title"><?php echo esc_html( (string) $settings['card2_title'] ); ?></<?php echo esc_html( $title_tag ); ?>>
+			<p class="lt-process-cards__subtitle"><?php echo esc_html( (string) $settings['card2_subtitle'] ); ?></p>
+
+			<div class="lt-process-cards__chart">
+				<?php if ( '' !== $chart_summary ) : ?>
+					<span class="lt-process-cards__sr-only"><?php echo esc_html( $chart_summary ); ?></span>
+				<?php endif; ?>
+				<svg viewBox="0 0 260 145" class="lt-process-cards__chart-svg" preserveAspectRatio="xMinYMid meet" aria-hidden="true">
 					<rect x="4" y="18" width="9" height="30" rx="3" fill="#EDE3D3" stroke="#E7DDCC" stroke-width="1"></rect>
 					<rect x="4" y="52" width="9" height="52" rx="3" fill="#AD9771"></rect>
 					<rect x="4" y="108" width="9" height="30" rx="3" fill="#EDE3D3" stroke="#E7DDCC" stroke-width="1"></rect>
 
-					<text x="26" y="36" class="lt-chart-zone"><?php echo esc_html( (string) $settings['card2_label_above'] ); ?></text>
-					<text x="26" y="81" class="lt-chart-zone"><?php echo esc_html( (string) $settings['card2_label_in_range'] ); ?></text>
-					<text x="26" y="126" class="lt-chart-zone"><?php echo esc_html( (string) $settings['card2_label_below'] ); ?></text>
+					<text x="26" y="36" class="lt-process-cards__chart-zone"><?php echo esc_html( (string) $settings['card2_label_above'] ); ?></text>
+					<text x="26" y="81" class="lt-process-cards__chart-zone"><?php echo esc_html( (string) $settings['card2_label_in_range'] ); ?></text>
+					<text x="26" y="126" class="lt-process-cards__chart-zone"><?php echo esc_html( (string) $settings['card2_label_below'] ); ?></text>
 
 					<?php if ( ! empty( $points ) ) : ?>
 						<?php
@@ -2114,7 +2259,7 @@ final class Process_Cards extends Widget_Base {
 						<?php endforeach; ?>
 
 						<?php foreach ( $points as $point ) : ?>
-							<text x="<?php echo absint( $point['point_x'] ?? 0 ); ?>" y="<?php echo absint( $point['point_label_y'] ?? 0 ); ?>" text-anchor="middle" class="lt-chart-value"><?php echo esc_html( (string) ( $point['point_value'] ?? '' ) ); ?></text>
+							<text x="<?php echo absint( $point['point_x'] ?? 0 ); ?>" y="<?php echo absint( $point['point_label_y'] ?? 0 ); ?>" text-anchor="middle" class="lt-process-cards__chart-value"><?php echo esc_html( (string) ( $point['point_value'] ?? '' ) ); ?></text>
 						<?php endforeach; ?>
 					<?php endif; ?>
 				</svg>
@@ -2131,13 +2276,14 @@ final class Process_Cards extends Widget_Base {
 	private function render_plan_card( array $settings ): void {
 		$plan_items = is_array( $settings['card3_plan_items'] ?? null ) ? $settings['card3_plan_items'] : array();
 		$icon_keys  = array_keys( self::PLAN_ICONS );
+		$title_tag  = $this->sanitize_heading_tag( $settings['card3_title_tag'] ?? 'h3' );
 		?>
-		<div class="lt-card lt-process-card lt-process-card--plan">
-			<p class="lt-num"><?php echo esc_html( (string) $settings['card3_step_label'] ); ?></p>
-			<h3 class="lt-title"><?php echo esc_html( (string) $settings['card3_title'] ); ?></h3>
-			<p class="lt-sub"><?php echo esc_html( (string) $settings['card3_subtitle'] ); ?></p>
+		<div class="lt-process-cards__card lt-process-cards__card--plan">
+			<p class="lt-process-cards__eyebrow"><?php echo esc_html( (string) $settings['card3_step_label'] ); ?></p>
+			<<?php echo esc_html( $title_tag ); ?> class="lt-process-cards__title"><?php echo esc_html( (string) $settings['card3_title'] ); ?></<?php echo esc_html( $title_tag ); ?>>
+			<p class="lt-process-cards__subtitle"><?php echo esc_html( (string) $settings['card3_subtitle'] ); ?></p>
 
-			<ul class="lt-plan-list">
+			<ul class="lt-process-cards__plan-list">
 				<?php foreach ( $plan_items as $item ) : ?>
 					<?php
 					$custom_icon = is_array( $item['plan_custom_icon'] ?? null ) ? $item['plan_custom_icon'] : array();
@@ -2147,17 +2293,17 @@ final class Process_Cards extends Widget_Base {
 						$icon_key = 'nutrition';
 					}
 					?>
-					<li class="lt-plan-item">
-						<span class="lt-plan-icon" aria-hidden="true">
+					<li class="lt-process-cards__plan-item">
+						<span class="lt-process-cards__plan-icon" aria-hidden="true">
 							<?php if ( ! empty( $custom_icon['value'] ) ) : ?>
 								<?php Icons_Manager::render_icon( $custom_icon, array( 'aria-hidden' => 'true' ) ); ?>
 							<?php else : ?>
 								<?php echo self::PLAN_ICONS[ $icon_key ]; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed, developer-authored SVG chosen from a closed enum; no user-supplied markup reaches this string. ?>
 							<?php endif; ?>
 						</span>
-						<span class="lt-plan-text">
-							<span class="lt-plan-title"><?php echo esc_html( (string) ( $item['item_title'] ?? '' ) ); ?></span>
-							<span class="lt-plan-desc"><?php echo esc_html( (string) ( $item['item_desc'] ?? '' ) ); ?></span>
+						<span class="lt-process-cards__plan-text">
+							<span class="lt-process-cards__plan-title"><?php echo esc_html( (string) ( $item['item_title'] ?? '' ) ); ?></span>
+							<span class="lt-process-cards__plan-desc"><?php echo esc_html( (string) ( $item['item_desc'] ?? '' ) ); ?></span>
 						</span>
 					</li>
 				<?php endforeach; ?>
