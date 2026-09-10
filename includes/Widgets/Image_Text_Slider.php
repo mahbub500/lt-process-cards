@@ -956,7 +956,11 @@ final class Image_Text_Slider extends Widget_Base {
 	}
 
 	/**
-	 * Style tab — the previous/next arrow buttons.
+	 * Style tab — the previous/next arrow buttons, including where they sit
+	 * (Vertical Position, Horizontal Offset). Positioned relative to
+	 * `.lt-image-text-slider__slider` - the slider row only, not the whole
+	 * widget - so they never end up centered against the Detail Panel's
+	 * height too; see render().
 	 */
 	private function register_style_arrows_controls(): void {
 		$this->start_controls_section(
@@ -1036,6 +1040,38 @@ final class Image_Text_Slider extends Widget_Base {
 				'default'   => '#ffffff',
 				'selectors' => array(
 					'{{WRAPPER}} .lt-image-text-slider__arrow:hover' => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'arrow_vertical_position',
+			array(
+				'label'                => esc_html__( 'Vertical Position', 'lt-process-cards' ),
+				'description'          => esc_html__( 'Where the arrows sit relative to the slider row - centered over it, or peeking over its top/bottom edge.', 'lt-process-cards' ),
+				'type'                 => Controls_Manager::CHOOSE,
+				'options'              => array(
+					'top'    => array(
+						'title' => esc_html__( 'Top Edge', 'lt-process-cards' ),
+						'icon'  => 'eicon-v-align-top',
+					),
+					'middle' => array(
+						'title' => esc_html__( 'Middle', 'lt-process-cards' ),
+						'icon'  => 'eicon-v-align-middle',
+					),
+					'bottom' => array(
+						'title' => esc_html__( 'Bottom Edge', 'lt-process-cards' ),
+						'icon'  => 'eicon-v-align-bottom',
+					),
+				),
+				'default'              => 'middle',
+				'selectors_dictionary' => array(
+					'top'    => '0%',
+					'middle' => '50%',
+					'bottom' => '100%',
+				),
+				'selectors'            => array(
+					'{{WRAPPER}}' => '--lt-its-arrow-top: {{VALUE}};',
 				),
 			)
 		);
@@ -1587,22 +1623,24 @@ final class Image_Text_Slider extends Widget_Base {
 		);
 		?>
 		<div<?php $this->render_attributes( $wrapper_attrs ); ?>>
-			<div class="lt-image-text-slider__viewport">
-				<div class="lt-image-text-slider__track" role="list">
-					<?php foreach ( $slides as $index => $slide ) : ?>
-						<?php $this->render_slide( $slide, (int) $index ); ?>
-					<?php endforeach; ?>
+			<div class="lt-image-text-slider__slider">
+				<div class="lt-image-text-slider__viewport">
+					<div class="lt-image-text-slider__track" role="list">
+						<?php foreach ( $slides as $index => $slide ) : ?>
+							<?php $this->render_slide( $slide, (int) $index ); ?>
+						<?php endforeach; ?>
+					</div>
 				</div>
-			</div>
 
-			<?php if ( $show_arrows ) : ?>
-				<button type="button" class="lt-image-text-slider__arrow lt-image-text-slider__arrow--prev" aria-label="<?php esc_attr_e( 'Previous slide', 'lt-process-cards' ); ?>">
-					<svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-				</button>
-				<button type="button" class="lt-image-text-slider__arrow lt-image-text-slider__arrow--next" aria-label="<?php esc_attr_e( 'Next slide', 'lt-process-cards' ); ?>">
-					<svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-				</button>
-			<?php endif; ?>
+				<?php if ( $show_arrows ) : ?>
+					<button type="button" class="lt-image-text-slider__arrow lt-image-text-slider__arrow--prev" aria-label="<?php esc_attr_e( 'Previous slide', 'lt-process-cards' ); ?>">
+						<svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+					</button>
+					<button type="button" class="lt-image-text-slider__arrow lt-image-text-slider__arrow--next" aria-label="<?php esc_attr_e( 'Next slide', 'lt-process-cards' ); ?>">
+						<svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+					</button>
+				<?php endif; ?>
+			</div>
 
 			<?php if ( $show_dots ) : ?>
 				<div class="lt-image-text-slider__dots" role="tablist" aria-label="<?php esc_attr_e( 'Slides', 'lt-process-cards' ); ?>">

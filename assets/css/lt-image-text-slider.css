@@ -20,6 +20,17 @@
 	position: relative;
 	--lt-its-gap: 20px;
 	--lt-its-active-scale: 1.12;
+	--lt-its-arrow-top: 50%;
+}
+
+/*
+ * Positioning context for the prev/next arrows (below) - scoped to just
+ * the slider row, not the whole widget, so "Vertical Position: Middle"
+ * centers them against the row's own height and never against the row
+ * plus the Detail Panel underneath it.
+ */
+.lt-image-text-slider__slider {
+	position: relative;
 }
 
 .lt-image-text-slider__viewport {
@@ -188,7 +199,7 @@ a.lt-image-text-slider__card {
 
 .lt-image-text-slider__arrow {
 	position: absolute;
-	top: 50%;
+	top: var(--lt-its-arrow-top, 50%);
 	transform: translateY(-50%);
 	z-index: 2;
 	display: inline-flex;

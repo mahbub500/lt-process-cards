@@ -88,9 +88,22 @@
 		this.bindEvents();
 		this.layout();
 
-		if ( this.autoplay && this.maxIndex > 0 ) {
+		if ( this.autoplay && this.hasScrollRoom() ) {
 			this.startAutoplay();
 		}
+	};
+
+	/**
+	 * Whether there's anywhere left to navigate to - `maxOffset` (for the
+	 * 'slide' effect) isn't meaningful for 'fade', which just needs more
+	 * than one slide to alternate between.
+	 */
+	LTImageTextSlider.prototype.hasScrollRoom = function () {
+		if ( 'fade' === this.effect ) {
+			return this.total > 1;
+		}
+
+		return this.maxOffset > 0;
 	};
 
 	LTImageTextSlider.prototype.getSlidesToShow = function () {
@@ -132,8 +145,17 @@
 		this.gap = this.getGap();
 		this.track.style.gap = this.gap + 'px';
 
+		// The last navigable slide is always the last slide, full stop -
+		// renderFrame() is what stops the track from scrolling past the
+		// end (it clamps to maxOffset, below), not this index. Deriving
+		// maxIndex from slide offsets instead of using `total - 1` directly
+		// used to under-count it whenever more than one slide fit in the
+		// remaining scroll room, which left the actual last slide only
+		// partially reachable/visible.
+		this.maxIndex = this.total - 1;
+
 		if ( 'fade' === this.effect ) {
-			this.maxIndex = this.total - 1;
+			this.maxOffset = 0;
 
 			return;
 		}
@@ -153,16 +175,6 @@
 
 		this.trackContentWidth = Math.max( 0, offset - this.gap );
 		this.maxOffset = Math.max( 0, this.trackContentWidth - this.viewport.clientWidth );
-
-		this.maxIndex = 0;
-
-		for ( var i = this.total - 1; i >= 0; i-- ) {
-			if ( this.slideOffsets[ i ] <= this.maxOffset ) {
-				this.maxIndex = i;
-
-				break;
-			}
-		}
 
 		if ( ! this.loop && this.index > this.maxIndex ) {
 			this.index = this.maxIndex;
@@ -255,7 +267,7 @@
 			return;
 		}
 
-		var noScrollRoom = this.maxIndex <= 0;
+		var noScrollRoom = ! this.hasScrollRoom();
 
 		if ( this.loop ) {
 			this.prevBtn.disabled = noScrollRoom;
@@ -551,7 +563,7 @@
 		}
 
 		function onDown( event ) {
-			if ( 'slide' !== self.effect || self.maxIndex <= 0 ) {
+			if ( 'slide' !== self.effect || self.maxOffset <= 0 ) {
 				return;
 			}
 
