@@ -1,25 +1,35 @@
 /**
  * LT Image Text Slider - base styles.
  *
- * Every slide's box is the exact same literal width/height (the Layout
+ * Every slide's *slot* is the exact same literal width/height (the Layout
  * section's Slide Width/Height) rather than a uniform auto-division of the
  * viewport: `.lt-image-text-slider__slide` is `flex: 0 0 auto`, so it
- * always sizes itself to its `.lt-image-text-slider__card`'s explicit
- * width/height. The selected slide never resizes - only its border/shadow
- * (Active State section) changes - so clicking never shifts layout.
- * lt-image-text-slider.js measures each slide's actual rendered size every
- * layout pass to compute pixel-accurate offsets - it reads the
- * --lt-its-gap custom property below for the same reason: one control
- * drives both the visual gap and the JS math, so they can never disagree.
+ * always sizes itself to its `.lt-image-text-slider__card`'s explicit,
+ * un-transformed width/height. The selected slide's card is then grown
+ * with `transform: scale()` (Active State section) - a paint-only effect
+ * that never changes that width/height, so the slot never resizes and no
+ * other slide ever shifts; only the active card visually paints a little
+ * past its own slot. lt-image-text-slider.js measures each slide's actual
+ * rendered size every layout pass to compute pixel-accurate offsets - it
+ * reads the --lt-its-gap custom property below for the same reason: one
+ * control drives both the visual gap and the JS math, so they can never
+ * disagree.
  */
 
 .lt-image-text-slider {
 	position: relative;
 	--lt-its-gap: 20px;
+	--lt-its-active-scale: 1.12;
 }
 
 .lt-image-text-slider__viewport {
-	overflow: hidden;
+	/*
+	 * Horizontal-only clipping: the active card paints past its slot
+	 * (transform: scale(), below) and must not be cut off top/bottom, but
+	 * slides scrolled out of view still need to be hidden left/right.
+	 */
+	overflow-x: hidden;
+	overflow-y: visible;
 	width: 100%;
 }
 
@@ -34,6 +44,7 @@
 	will-change: transform;
 	transition-property: transform;
 	transition-timing-function: ease;
+	padding: 14px 0;
 }
 
 .lt-image-text-slider--fade .lt-image-text-slider__track {
@@ -72,7 +83,9 @@
 	color: #fff;
 	text-decoration: none;
 	box-sizing: border-box;
-	transition: box-shadow 0.25s ease;
+	transform: scale(1);
+	transform-origin: center;
+	transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 a.lt-image-text-slider__card {
@@ -156,13 +169,21 @@ a.lt-image-text-slider__card {
 }
 
 /*
- * Active/selected slide highlight - border/shadow only, default matches the
- * Style tab's default control values. Every slide keeps the exact same box
- * size (see the file header comment), so this never changes layout.
+ * Active/selected slide highlight - default matches the Style tab's default
+ * control values. The scale grows the card in place, paint-only (see the
+ * file header comment) - the slide's own slot never resizes, so no other
+ * slide ever moves. z-index on the slide (a flex item, so it doesn't need
+ * `position` set) lifts the growing card above its neighbours so it isn't
+ * clipped underneath them.
  */
+.lt-image-text-slider__slide--active {
+	z-index: 2;
+}
+
 .lt-image-text-slider__slide--active .lt-image-text-slider__card {
 	--lt-its-active-border-width: 2px;
 	box-shadow: 0 0 0 var(--lt-its-active-border-width) #3b82f6;
+	transform: scale(var(--lt-its-active-scale, 1.12));
 }
 
 .lt-image-text-slider__arrow {

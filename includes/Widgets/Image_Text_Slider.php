@@ -515,10 +515,12 @@ final class Image_Text_Slider extends Widget_Base {
 	 * Every slide - selected or not - gets the exact same literal
 	 * width/height from Slide Width/Height below (not "however many fit the
 	 * viewport" auto-division): `.lt-image-text-slider__slide` is
-	 * `flex: 0 0 auto`, so it sizes itself to its card's explicit
-	 * width/height. Clicking a slide never changes its box size - only its
-	 * border/shadow (Active State section) and the Detail Panel's content
-	 * (a crossfade, see swapDetailContent() in assets/js/lt-image-text-slider.js).
+	 * `flex: 0 0 auto`, so it sizes itself to its card's explicit,
+	 * un-transformed width/height. This is what a slide's box size actually
+	 * is, for layout purposes, even while it's selected - the Active State
+	 * section's `transform: scale()` growth is paint-only and never touches
+	 * this value, which is exactly why growing the selected slide never
+	 * shifts any other slide.
 	 */
 	private function register_style_layout_controls(): void {
 		$this->start_controls_section(
@@ -783,11 +785,16 @@ final class Image_Text_Slider extends Widget_Base {
 	/**
 	 * Style tab — the highlight applied to whichever slide is currently
 	 * selected (either flagged "Mark as Active/Selected" on load, or
-	 * clicked): the blue border/shadow only. Every slide - active or not -
-	 * keeps the exact same box size (the Layout section's Slide
-	 * Width/Height), so nothing shifts size on click; only the Detail Panel
-	 * content changes (crossfade, see swapDetailContent() in
-	 * assets/js/lt-image-text-slider.js).
+	 * clicked): a size increase (`transform: scale()`, via `active_scale`)
+	 * plus the blue border/shadow.
+	 *
+	 * The scale is a paint-only transform, not a `width`/`height` change:
+	 * `.lt-image-text-slider__slide` (the fixed-size "panel" reserving this
+	 * slide's spot in the row - the Layout section's Slide Width/Height)
+	 * never resizes, so the selected slide visually growing never shifts,
+	 * shrinks, or reflows any other slide - it stays entirely
+	 * "within panel" as far as layout is concerned, even though it paints
+	 * a little past its own edges.
 	 */
 	private function register_style_active_controls(): void {
 		$this->start_controls_section(
@@ -795,6 +802,22 @@ final class Image_Text_Slider extends Widget_Base {
 			array(
 				'label' => esc_html__( 'Active State', 'lt-process-cards' ),
 				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_control(
+			'active_scale',
+			array(
+				'label'       => esc_html__( 'Active Scale', 'lt-process-cards' ),
+				'description' => esc_html__( 'How much bigger the selected slide grows compared to the others. 1 = no growth. This only changes how big it paints - the fixed slot it sits in (Layout section) never resizes, so other slides never move.', 'lt-process-cards' ),
+				'type'        => Controls_Manager::NUMBER,
+				'min'         => 1,
+				'max'         => 1.5,
+				'step'        => 0.01,
+				'default'     => 1.12,
+				'selectors'   => array(
+					'{{WRAPPER}}' => '--lt-its-active-scale: {{VALUE}};',
+				),
 			)
 		);
 

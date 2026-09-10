@@ -276,9 +276,11 @@
 
 	/**
 	 * Select a slide as the source for the Detail Panel: highlights it (and
-	 * only it) as `--active` (border/shadow only - see the Active State
-	 * style section) - then crossfades the Detail Panel over to that
-	 * slide's content (swapDetailContent()).
+	 * only it) as `--active` - which, via the Active State style section,
+	 * grows it in place with a paint-only `transform: scale()` (its actual
+	 * layout box never changes, so no other slide ever moves) - then
+	 * crossfades the Detail Panel over to that slide's content
+	 * (swapDetailContent()).
 	 *
 	 * @param {number} index Zero-based slide index.
 	 */
@@ -289,9 +291,11 @@
 
 		this.activeDetailIndex = index;
 
-		// Every slide keeps the exact same box size (see the CSS file
-		// header comment), so toggling --active here only changes its
-		// border/shadow - no re-measure/re-render of the track is needed.
+		// The active slide grows via CSS transform: scale() - paint-only,
+		// so every slide's actual box size (its flex-basis) never changes
+		// (see the CSS file header comment) and no other slide ever moves.
+		// That means toggling --active here needs no re-measure/re-render
+		// of the track.
 		this.slides.forEach( function ( slide, i ) {
 			slide.classList.toggle( 'lt-image-text-slider__slide--active', i === index );
 		} );
