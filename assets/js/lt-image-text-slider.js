@@ -49,6 +49,7 @@
 		}, this );
 
 		this.activeDetailIndex = this.detailRoot ? ( parseInt( this.detailRoot.getAttribute( 'data-active-index' ), 10 ) || 0 ) : -1;
+		this.detailSwapTimer = null;
 
 		this.total = this.slides.length;
 
@@ -87,7 +88,7 @@
 		this.bindEvents();
 		this.layout();
 
-		if ( this.autoplay && this.total > this.slidesToShow ) {
+		if ( this.autoplay && this.maxIndex > 0 ) {
 			this.startAutoplay();
 		}
 	};
@@ -114,35 +115,73 @@
 	};
 
 	/**
-	 * Recompute slide count/width for the current viewport and re-apply the
+	 * Recompute slide count and, for the 'slide' effect, every slide's
+	 * actual rendered width/offset - without touching the track's position.
+	 * Split out from layout() so selectDetail() can re-measure (the active
+	 * slide's box just changed size) and then animate into the new
+	 * position, instead of layout()'s always-immediate resize behaviour.
+	 *
+	 * Each slide's width comes from CSS now (the Layout/Active State
+	 * sections' Width/Height controls - `.lt-image-text-slider__slide` is
+	 * `flex: 0 0 auto`, so it already matches its card), not a uniform
+	 * viewport-width division, so slides can have different widths (the
+	 * active one) without the offset math falling out of sync.
+	 */
+	LTImageTextSlider.prototype.measure = function () {
+		this.slidesToShow = Math.max( 1, Math.min( this.getSlidesToShow(), this.total ) );
+		this.gap = this.getGap();
+		this.track.style.gap = this.gap + 'px';
+
+		if ( 'fade' === this.effect ) {
+			this.maxIndex = this.total - 1;
+
+			return;
+		}
+
+		var offset = 0;
+
+		this.slideWidths = [];
+		this.slideOffsets = [];
+
+		this.slides.forEach( function ( slide ) {
+			var width = slide.getBoundingClientRect().width;
+
+			this.slideWidths.push( width );
+			this.slideOffsets.push( offset );
+			offset += width + this.gap;
+		}, this );
+
+		this.trackContentWidth = Math.max( 0, offset - this.gap );
+		this.maxOffset = Math.max( 0, this.trackContentWidth - this.viewport.clientWidth );
+
+		this.maxIndex = 0;
+
+		for ( var i = this.total - 1; i >= 0; i-- ) {
+			if ( this.slideOffsets[ i ] <= this.maxOffset ) {
+				this.maxIndex = i;
+
+				break;
+			}
+		}
+
+		if ( ! this.loop && this.index > this.maxIndex ) {
+			this.index = this.maxIndex;
+		}
+	};
+
+	/**
+	 * Recompute slide sizing for the current viewport and re-apply the
 	 * current position without animating (a resize is not a navigation).
 	 */
 	LTImageTextSlider.prototype.layout = function () {
-		this.slidesToShow = Math.max( 1, Math.min( this.getSlidesToShow(), this.total ) );
-		this.maxIndex = Math.max( 0, this.total - this.slidesToShow );
-
-		if ( this.index > this.maxIndex ) {
-			this.index = this.loop ? 0 : this.maxIndex;
-		}
-
 		if ( 'fade' === this.effect ) {
 			this.slides.forEach( function ( slide ) {
 				slide.style.flex = '0 0 100%';
 			} );
-			this.renderFrame( true );
-		} else {
-			this.gap = this.getGap();
-			var slideWidth = ( this.viewport.clientWidth - this.gap * ( this.slidesToShow - 1 ) ) / this.slidesToShow;
-			this.slideWidth = slideWidth;
-
-			this.track.style.gap = this.gap + 'px';
-			this.slides.forEach( function ( slide ) {
-				slide.style.flex = '0 0 ' + slideWidth + 'px';
-			} );
-
-			this.renderFrame( true );
 		}
 
+		this.measure();
+		this.renderFrame( true );
 		this.updateArrowState();
 		this.updateDots();
 	};
@@ -162,7 +201,7 @@
 			return;
 		}
 
-		var offset = this.index * ( this.slideWidth + this.gap );
+		var offset = Math.min( this.slideOffsets[ this.index ] || 0, this.maxOffset );
 
 		this.track.style.transitionDuration = immediate ? '0ms' : this.speed + 'ms';
 		this.track.style.transform = 'translateX(' + -offset + 'px)';
@@ -177,8 +216,6 @@
 	LTImageTextSlider.prototype.goTo = function ( index, immediate ) {
 		if ( this.loop ) {
 			index = ( ( index % this.total ) + this.total ) % this.total;
-			index = Math.min( index, this.maxIndex + this.slidesToShow - 1 );
-			index = Math.min( index, this.total - 1 );
 		} else {
 			index = Math.max( 0, Math.min( index, this.maxIndex ) );
 		}
@@ -218,9 +255,11 @@
 			return;
 		}
 
-		if ( this.loop || this.total <= this.slidesToShow ) {
-			this.prevBtn.disabled = this.total <= this.slidesToShow;
-			this.nextBtn.disabled = this.total <= this.slidesToShow;
+		var noScrollRoom = this.maxIndex <= 0;
+
+		if ( this.loop ) {
+			this.prevBtn.disabled = noScrollRoom;
+			this.nextBtn.disabled = noScrollRoom;
 
 			return;
 		}
@@ -237,10 +276,9 @@
 
 	/**
 	 * Select a slide as the source for the Detail Panel: highlights it (and
-	 * only it) as `--active`, then clones that slide's already-escaped,
-	 * server-rendered `<template>` markup into the Detail Panel's image and
-	 * content columns - see render_detail_panel() in
-	 * includes/Widgets/Image_Text_Slider.php.
+	 * only it) as `--active` (border/shadow only - see the Active State
+	 * style section) - then crossfades the Detail Panel over to that
+	 * slide's content (swapDetailContent()).
 	 *
 	 * @param {number} index Zero-based slide index.
 	 */
@@ -251,31 +289,62 @@
 
 		this.activeDetailIndex = index;
 
+		// Every slide keeps the exact same box size (see the CSS file
+		// header comment), so toggling --active here only changes its
+		// border/shadow - no re-measure/re-render of the track is needed.
 		this.slides.forEach( function ( slide, i ) {
 			slide.classList.toggle( 'lt-image-text-slider__slide--active', i === index );
 		} );
 
-		if ( ! this.detailRoot ) {
-			return;
+		if ( this.detailRoot ) {
+			this.swapDetailContent( index );
 		}
+	};
 
+	/**
+	 * Crossfade the Detail Panel over to a different slide: fade the
+	 * current image/text out, swap in that slide's already-escaped,
+	 * server-rendered `<template>` markup (see render_detail_panel() in
+	 * includes/Widgets/Image_Text_Slider.php) while it's invisible, then
+	 * fade back in - instead of an abrupt content swap.
+	 * DETAIL_FADE_MS below must stay >= the CSS fade-out transition
+	 * duration (`.lt-image-text-slider__detail--switching`, in the
+	 * stylesheet) or the swap will happen mid-fade and flash the new
+	 * content in early.
+	 *
+	 * @param {number} index Zero-based slide index.
+	 */
+	LTImageTextSlider.prototype.swapDetailContent = function ( index ) {
+		var self = this;
 		var mediaTpl = this.detailTemplates.media[ index ];
 		var contentTpl = this.detailTemplates.content[ index ];
+		var DETAIL_FADE_MS = 260;
 
-		if ( mediaTpl && this.detailMedia ) {
-			var existingImg = this.detailMedia.querySelector( 'img' );
+		window.clearTimeout( this.detailSwapTimer );
 
-			if ( existingImg ) {
-				existingImg.remove();
+		this.detailRoot.classList.add( 'lt-image-text-slider__detail--switching' );
+
+		this.detailSwapTimer = window.setTimeout( function () {
+			if ( mediaTpl && self.detailMedia ) {
+				var existingImg = self.detailMedia.querySelector( 'img' );
+
+				if ( existingImg ) {
+					existingImg.remove();
+				}
+
+				self.detailMedia.insertBefore( mediaTpl.content.cloneNode( true ), self.detailMedia.firstChild );
 			}
 
-			this.detailMedia.insertBefore( mediaTpl.content.cloneNode( true ), this.detailMedia.firstChild );
-		}
+			if ( contentTpl && self.detailContent ) {
+				self.detailContent.innerHTML = '';
+				self.detailContent.appendChild( contentTpl.content.cloneNode( true ) );
+			}
 
-		if ( contentTpl && this.detailContent ) {
-			this.detailContent.innerHTML = '';
-			this.detailContent.appendChild( contentTpl.content.cloneNode( true ) );
-		}
+			// Force a reflow so removing --switching right after actually
+			// transitions the fade-in instead of jumping straight to it.
+			void self.detailRoot.offsetHeight;
+			self.detailRoot.classList.remove( 'lt-image-text-slider__detail--switching' );
+		}, DETAIL_FADE_MS );
 	};
 
 	LTImageTextSlider.prototype.startAutoplay = function () {
@@ -466,7 +535,7 @@
 			}
 
 			var delta = getPointerX( event ) - startX;
-			var threshold = self.slideWidth / 4;
+			var threshold = ( self.slideWidths[ self.index ] || 0 ) / 4;
 
 			if ( delta < -threshold ) {
 				self.next();
@@ -478,14 +547,14 @@
 		}
 
 		function onDown( event ) {
-			if ( 'slide' !== self.effect || self.total <= self.slidesToShow ) {
+			if ( 'slide' !== self.effect || self.maxIndex <= 0 ) {
 				return;
 			}
 
 			self.isDragging = true;
 			self.dragMoved = false;
 			startX = getPointerX( event );
-			startOffset = self.index * ( self.slideWidth + self.gap );
+			startOffset = self.slideOffsets[ self.index ] || 0;
 			self.track.style.transitionDuration = '0ms';
 			self.viewport.classList.add( 'lt-image-text-slider__viewport--dragging' );
 

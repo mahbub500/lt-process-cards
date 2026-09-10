@@ -36,7 +36,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * arrows, dots).
  *
  * Style tab is one `register_style_*_controls()` per visual concern: layout
- * (gap/min-height/vertical align), image (height/fit/radius/overlay), badge,
+ * (gap/width/height/vertical align), image (height/fit/radius/overlay), badge,
  * title, description, the active-slide highlight, the card box
  * (background/radius/padding/border/shadow), arrows and dots.
  *
@@ -503,13 +503,22 @@ final class Image_Text_Slider extends Widget_Base {
 	}
 
 	/**
-	 * Style tab — track gap, card min-height, vertical alignment.
+	 * Style tab — track gap, and every slide's box size and vertical
+	 * alignment.
 	 *
 	 * The gap is written to a `--lt-its-gap` custom property (rather than
 	 * only a `gap` declaration) because assets/js/lt-image-text-slider.js
-	 * reads that property to compute pixel-accurate slide widths/offsets —
-	 * one control drives both the visual gap and the JS math, so they can
-	 * never disagree.
+	 * reads it to compute pixel-accurate slide offsets - the one control
+	 * drives both the visual gap and the JS math, so they can never
+	 * disagree.
+	 *
+	 * Every slide - selected or not - gets the exact same literal
+	 * width/height from Slide Width/Height below (not "however many fit the
+	 * viewport" auto-division): `.lt-image-text-slider__slide` is
+	 * `flex: 0 0 auto`, so it sizes itself to its card's explicit
+	 * width/height. Clicking a slide never changes its box size - only its
+	 * border/shadow (Active State section) and the Detail Panel's content
+	 * (a crossfade, see swapDetailContent() in assets/js/lt-image-text-slider.js).
 	 */
 	private function register_style_layout_controls(): void {
 		$this->start_controls_section(
@@ -543,10 +552,33 @@ final class Image_Text_Slider extends Widget_Base {
 		);
 
 		$this->add_responsive_control(
-			'slide_min_height',
+			'slide_width',
 			array(
-				'label'       => esc_html__( 'Slide Min Height', 'lt-process-cards' ),
-				'description' => esc_html__( 'Base height for every slide; the selected slide grows from here by the Active State section\'s "Active Scale".', 'lt-process-cards' ),
+				'label'       => esc_html__( 'Slide Width', 'lt-process-cards' ),
+				'description' => esc_html__( 'Fixed box width for every slide, including the selected one.', 'lt-process-cards' ),
+				'type'        => Controls_Manager::SLIDER,
+				'size_units'  => array( 'px' ),
+				'range'       => array(
+					'px' => array(
+						'min' => 80,
+						'max' => 600,
+					),
+				),
+				'default'     => array(
+					'unit' => 'px',
+					'size' => 220,
+				),
+				'selectors'   => array(
+					'{{WRAPPER}} .lt-image-text-slider__card' => 'width: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'slide_height',
+			array(
+				'label'       => esc_html__( 'Slide Height', 'lt-process-cards' ),
+				'description' => esc_html__( 'Fixed box height for every slide, including the selected one.', 'lt-process-cards' ),
 				'type'        => Controls_Manager::SLIDER,
 				'size_units'  => array( 'px' ),
 				'range'       => array(
@@ -560,7 +592,7 @@ final class Image_Text_Slider extends Widget_Base {
 					'size' => 150,
 				),
 				'selectors'   => array(
-					'{{WRAPPER}} .lt-image-text-slider__card' => 'min-height: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .lt-image-text-slider__card' => 'height: {{SIZE}}{{UNIT}};',
 				),
 			)
 		);
@@ -572,7 +604,7 @@ final class Image_Text_Slider extends Widget_Base {
 				'type'      => Controls_Manager::CHOOSE,
 				'options'   => array(
 					'stretch'    => array(
-						'title' => esc_html__( 'Stretch (equal height)', 'lt-process-cards' ),
+						'title' => esc_html__( 'Stretch', 'lt-process-cards' ),
 						'icon'  => 'eicon-v-align-stretch',
 					),
 					'flex-start' => array(
@@ -751,9 +783,11 @@ final class Image_Text_Slider extends Widget_Base {
 	/**
 	 * Style tab — the highlight applied to whichever slide is currently
 	 * selected (either flagged "Mark as Active/Selected" on load, or
-	 * clicked): a size increase (transform: scale(), via `active_scale`,
-	 * applied in CSS on `.lt-image-text-slider__slide--active`) plus the
-	 * blue border/shadow.
+	 * clicked): the blue border/shadow only. Every slide - active or not -
+	 * keeps the exact same box size (the Layout section's Slide
+	 * Width/Height), so nothing shifts size on click; only the Detail Panel
+	 * content changes (crossfade, see swapDetailContent() in
+	 * assets/js/lt-image-text-slider.js).
 	 */
 	private function register_style_active_controls(): void {
 		$this->start_controls_section(
@@ -761,22 +795,6 @@ final class Image_Text_Slider extends Widget_Base {
 			array(
 				'label' => esc_html__( 'Active State', 'lt-process-cards' ),
 				'tab'   => Controls_Manager::TAB_STYLE,
-			)
-		);
-
-		$this->add_control(
-			'active_scale',
-			array(
-				'label'       => esc_html__( 'Active Scale', 'lt-process-cards' ),
-				'description' => esc_html__( 'How much bigger the selected slide grows compared to the others. 1 = no growth.', 'lt-process-cards' ),
-				'type'        => Controls_Manager::NUMBER,
-				'min'         => 1,
-				'max'         => 1.5,
-				'step'        => 0.01,
-				'default'     => 1.12,
-				'selectors'   => array(
-					'{{WRAPPER}}' => '--lt-its-active-scale: {{VALUE}};',
-				),
 			)
 		);
 
