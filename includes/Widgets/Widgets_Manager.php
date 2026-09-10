@@ -33,6 +33,7 @@ final class Widgets_Manager implements Registrable {
 	 */
 	private const WIDGETS = array(
 		Process_Cards::class,
+		Image_Text_Slider::class,
 	);
 
 	/**

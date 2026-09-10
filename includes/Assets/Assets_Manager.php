@@ -36,6 +36,16 @@ final class Assets_Manager implements Registrable {
 	public const SCRIPT_HANDLE = 'lt-process-cards';
 
 	/**
+	 * Image Text Slider stylesheet handle.
+	 */
+	public const SLIDER_STYLE_HANDLE = 'lt-image-text-slider';
+
+	/**
+	 * Image Text Slider script handle.
+	 */
+	public const SLIDER_SCRIPT_HANDLE = 'lt-image-text-slider';
+
+	/**
 	 * Plugin instance used to resolve URLs and the version string.
 	 */
 	private Plugin $plugin;
@@ -74,6 +84,21 @@ final class Assets_Manager implements Registrable {
 		wp_register_script(
 			self::SCRIPT_HANDLE,
 			$this->plugin->url( 'assets/js/lt-process-cards.js' ),
+			array( 'jquery' ),
+			$this->plugin->version(),
+			true
+		);
+
+		wp_register_style(
+			self::SLIDER_STYLE_HANDLE,
+			$this->plugin->url( 'assets/css/lt-image-text-slider.css' ),
+			array(),
+			$this->plugin->version()
+		);
+
+		wp_register_script(
+			self::SLIDER_SCRIPT_HANDLE,
+			$this->plugin->url( 'assets/js/lt-image-text-slider.js' ),
 			array( 'jquery' ),
 			$this->plugin->version(),
 			true
