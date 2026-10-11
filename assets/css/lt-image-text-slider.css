@@ -99,10 +99,6 @@
 	transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-a.lt-image-text-slider__card {
-	cursor: pointer;
-}
-
 .lt-image-text-slider__image {
 	position: absolute;
 	inset: 0;

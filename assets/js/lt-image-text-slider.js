@@ -437,9 +437,8 @@
 
 	/**
 	 * Click/keyboard delegation on the track: selects a slide for the
-	 * Detail Panel when its card has no Link (a real `<a>` card is left to
-	 * navigate normally), and swallows the click a drag ends on so dragging
-	 * across a card never also fires a selection or a link.
+	 * Detail Panel, and swallows the click a drag ends on so dragging across
+	 * a card never also fires a selection.
 	 */
 	LTImageTextSlider.prototype.bindSelection = function () {
 		var self = this;
@@ -447,7 +446,7 @@
 		function resolveSlide( target ) {
 			var cardEl = target.closest( '.lt-image-text-slider__card' );
 
-			if ( ! cardEl || 'a' === cardEl.tagName.toLowerCase() ) {
+			if ( ! cardEl ) {
 				return null;
 			}
 
@@ -464,9 +463,8 @@
 
 		this.track.addEventListener( 'click', function ( event ) {
 			if ( self.dragMoved ) {
-				// A real drag just ended on this card - suppress both the
-				// click-to-select behaviour below and, for a linked slide,
-				// the browser's default navigation.
+				// A real drag just ended on this card - suppress the
+				// click-to-select behaviour below.
 				event.preventDefault();
 				self.dragMoved = false;
 

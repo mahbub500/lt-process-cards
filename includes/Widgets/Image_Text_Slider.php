@@ -27,10 +27,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * A responsive, repeater-driven image + text slider (one slide = one image
- * with a badge/title/description overlay, optionally linked).
+ * with a badge/title overlay; selecting it fills the Detail Panel).
  *
  * Content tab: `register_slides_controls()` holds the `slides` Repeater
- * (image, badge icon/text, title, description, link, active flag);
+ * (image, badge icon/text, title, description, button, active flag);
  * `register_settings_controls()` holds every behavioural option (slides to
  * show/scroll — responsive, transition effect/speed, autoplay, loop, drag,
  * arrows, dots).
@@ -126,7 +126,7 @@ final class Image_Text_Slider extends Widget_Base {
 	}
 
 	/**
-	 * Content tab — the slides repeater (image + text + link).
+	 * Content tab — the slides repeater (image + text + button).
 	 */
 	private function register_slides_controls(): void {
 		$this->start_controls_section(
@@ -250,19 +250,6 @@ final class Image_Text_Slider extends Widget_Base {
 				'type'        => Controls_Manager::URL,
 				'label'       => esc_html__( 'Button Link', 'lt-process-cards' ),
 				'description' => esc_html__( 'The button shows in the Detail Panel, after the description, only when both Button Text and Button Link are set.', 'lt-process-cards' ),
-				'default'     => array(
-					'url' => '',
-				),
-				'placeholder' => 'https://your-link.com',
-			)
-		);
-
-		$repeater->add_control(
-			'slide_link',
-			array(
-				'type'        => Controls_Manager::URL,
-				'label'       => esc_html__( 'Link', 'lt-process-cards' ),
-				'description' => esc_html__( 'Optional. Makes the whole slide clickable.', 'lt-process-cards' ),
 				'default'     => array(
 					'url' => '',
 				),
@@ -2003,34 +1990,22 @@ final class Image_Text_Slider extends Widget_Base {
 		$badge_text = (string) ( $slide['slide_badge_text'] ?? '' );
 		$badge_icon = is_array( $slide['slide_badge_icon'] ?? null ) ? $slide['slide_badge_icon'] : array();
 		$is_active  = 'yes' === ( $slide['slide_active'] ?? '' );
-		$link       = is_array( $slide['slide_link'] ?? null ) ? $slide['slide_link'] : array();
-		$url        = (string) ( $link['url'] ?? '' );
-		$has_link   = '' !== $url;
-		$tag        = $has_link ? 'a' : 'div';
 
 		$slide_classes = array( 'lt-image-text-slider__slide' );
 		if ( $is_active ) {
 			$slide_classes[] = 'lt-image-text-slider__slide--active';
 		}
 
-		$card_attrs = array( 'class' => 'lt-image-text-slider__card' );
-		if ( $has_link ) {
-			$card_attrs['href'] = $url;
-			if ( ! empty( $link['is_external'] ) ) {
-				$card_attrs['target'] = '_blank';
-			}
-			if ( ! empty( $link['nofollow'] ) ) {
-				$card_attrs['rel'] = 'nofollow';
-			}
-		} else {
-			// No link: the card is a click/keyboard target that selects this
-			// slide for the Detail Panel instead of navigating anywhere.
-			$card_attrs['role']     = 'button';
-			$card_attrs['tabindex'] = '0';
-		}
+		// The card is a click/keyboard target that selects this slide for
+		// the Detail Panel - it never navigates anywhere.
+		$card_attrs = array(
+			'class'    => 'lt-image-text-slider__card',
+			'role'     => 'button',
+			'tabindex' => '0',
+		);
 		?>
 		<div class="<?php echo esc_attr( implode( ' ', $slide_classes ) ); ?>" role="listitem" data-index="<?php echo esc_attr( (string) $index ); ?>">
-			<<?php echo esc_html( $tag ); ?><?php $this->render_attributes( $card_attrs ); ?>>
+			<div<?php $this->render_attributes( $card_attrs ); ?>>
 				<span class="lt-image-text-slider__image">
 					<?php $this->render_slide_image( $slide ); ?>
 					<span class="lt-image-text-slider__overlay" aria-hidden="true"></span>
@@ -2054,7 +2029,7 @@ final class Image_Text_Slider extends Widget_Base {
 						<span class="lt-image-text-slider__title"><?php echo esc_html( $title ); ?></span>
 					<?php endif; ?>
 				</span>
-			</<?php echo esc_html( $tag ); ?>>
+			</div>
 		</div>
 		<?php
 	}
