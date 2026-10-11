@@ -382,6 +382,66 @@ a.lt-image-text-slider__card {
 	line-height: 1.6;
 	color: rgba(255, 255, 255, 0.85);
 	max-width: 46ch;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.lt-image-text-slider__detail-desc-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	text-align: left;
+}
+
+.lt-image-text-slider__detail-check {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 1.6em; /* matches the list line-height so the icon centers on the first line */
+	font-size: 16px;
+	color: #ffffff;
+}
+
+/* Covers both the built-in check and any icon picked in "Description List Icon" (font <i> or uploaded SVG). */
+.lt-image-text-slider__detail-check svg {
+	display: block;
+	width: 1em;
+	height: 1em;
+	fill: currentColor;
+}
+
+.lt-image-text-slider__detail-check i {
+	display: block;
+	font-size: 1em;
+	line-height: 1;
+}
+
+.lt-image-text-slider__detail-button {
+	display: inline-block;
+	margin-top: 8px;
+	padding: 12px 28px;
+	border-radius: 999px;
+	background-color: #ffffff;
+	color: #111111;
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 1.2;
+	text-decoration: none;
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.lt-image-text-slider__detail-button:hover,
+.lt-image-text-slider__detail-button:focus-visible {
+	background-color: rgba(255, 255, 255, 0.85);
+	color: #111111;
+	text-decoration: none;
 }
 
 @media (max-width: 767px) {

@@ -226,10 +226,34 @@ final class Image_Text_Slider extends Widget_Base {
 		$repeater->add_control(
 			'slide_description',
 			array(
-				'type'    => Controls_Manager::TEXTAREA,
-				'label'   => esc_html__( 'Description', 'lt-process-cards' ),
-				'rows'    => 3,
-				'default' => '',
+				'type'        => Controls_Manager::TEXTAREA,
+				'label'       => esc_html__( 'Description', 'lt-process-cards' ),
+				'rows'        => 5,
+				'default'     => '',
+				'description' => esc_html__( 'One item per line — each line is shown in the Detail Panel with a check icon.', 'lt-process-cards' ),
+			)
+		);
+
+		$repeater->add_control(
+			'slide_button_text',
+			array(
+				'type'      => Controls_Manager::TEXT,
+				'label'     => esc_html__( 'Button Text', 'lt-process-cards' ),
+				'default'   => '',
+				'separator' => 'before',
+			)
+		);
+
+		$repeater->add_control(
+			'slide_button_link',
+			array(
+				'type'        => Controls_Manager::URL,
+				'label'       => esc_html__( 'Button Link', 'lt-process-cards' ),
+				'description' => esc_html__( 'The button shows in the Detail Panel, after the description, only when both Button Text and Button Link are set.', 'lt-process-cards' ),
+				'default'     => array(
+					'url' => '',
+				),
+				'placeholder' => 'https://your-link.com',
 			)
 		);
 
@@ -493,6 +517,23 @@ final class Image_Text_Slider extends Widget_Base {
 					),
 				),
 				'default'     => 'left',
+				'condition'   => array(
+					'show_detail_panel' => 'yes',
+				),
+			)
+		);
+
+		$this->add_control(
+			'detail_check_icon',
+			array(
+				'type'        => Controls_Manager::ICONS,
+				'label'       => esc_html__( 'Description List Icon', 'lt-process-cards' ),
+				'description' => esc_html__( 'Shown before each description line. Leave empty to use the default hand-drawn circle check.', 'lt-process-cards' ),
+				'skin'        => 'inline',
+				'default'     => array(
+					'value'   => '',
+					'library' => '',
+				),
 				'condition'   => array(
 					'show_detail_panel' => 'yes',
 				),
@@ -1450,6 +1491,140 @@ final class Image_Text_Slider extends Widget_Base {
 			)
 		);
 
+		$this->add_control(
+			'detail_check_color',
+			array(
+				'label'     => esc_html__( 'Check Icon Color', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'default'   => '#ffffff',
+				'selectors' => array(
+					'{{WRAPPER}} .lt-image-text-slider__detail-check' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'detail_check_size',
+			array(
+				'label'      => esc_html__( 'Check Icon Size', 'lt-process-cards' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array(
+					'px' => array(
+						'min' => 8,
+						'max' => 40,
+					),
+				),
+				'selectors'  => array(
+					'{{WRAPPER}} .lt-image-text-slider__detail-check' => 'font-size: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'detail_desc_gap',
+			array(
+				'label'      => esc_html__( 'Line Spacing', 'lt-process-cards' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array(
+					'px' => array(
+						'min' => 0,
+						'max' => 40,
+					),
+				),
+				'selectors'  => array(
+					'{{WRAPPER}} .lt-image-text-slider__detail-desc' => 'gap: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'heading_detail_button',
+			array(
+				'label'     => esc_html__( 'Button', 'lt-process-cards' ),
+				'type'      => Controls_Manager::HEADING,
+				'separator' => 'before',
+			)
+		);
+
+		$this->add_group_control(
+			Group_Control_Typography::get_type(),
+			array(
+				'name'     => 'detail_button_typography',
+				'label'    => esc_html__( 'Typography', 'lt-process-cards' ),
+				'selector' => '{{WRAPPER}} .lt-image-text-slider__detail-button',
+			)
+		);
+
+		$this->add_control(
+			'detail_button_color',
+			array(
+				'label'     => esc_html__( 'Text Color', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .lt-image-text-slider__detail-button' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'detail_button_bg',
+			array(
+				'label'     => esc_html__( 'Background', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .lt-image-text-slider__detail-button' => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'detail_button_hover_color',
+			array(
+				'label'     => esc_html__( 'Hover Text Color', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .lt-image-text-slider__detail-button:hover, {{WRAPPER}} .lt-image-text-slider__detail-button:focus-visible' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'detail_button_hover_bg',
+			array(
+				'label'     => esc_html__( 'Hover Background', 'lt-process-cards' ),
+				'type'      => Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .lt-image-text-slider__detail-button:hover, {{WRAPPER}} .lt-image-text-slider__detail-button:focus-visible' => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'detail_button_padding',
+			array(
+				'label'      => esc_html__( 'Padding', 'lt-process-cards' ),
+				'type'       => Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', 'em' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .lt-image-text-slider__detail-button' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'detail_button_radius',
+			array(
+				'label'      => esc_html__( 'Radius', 'lt-process-cards' ),
+				'type'       => Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', '%' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .lt-image-text-slider__detail-button' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
 		$this->end_controls_section();
 	}
 
@@ -1701,6 +1876,7 @@ final class Image_Text_Slider extends Widget_Base {
 		$active_index = $this->get_initial_active_index( $slides );
 		$active_slide = $slides[ $active_index ] ?? array();
 		$text_right   = 'right' === ( $settings['detail_text_position'] ?? 'left' );
+		$check_icon   = is_array( $settings['detail_check_icon'] ?? null ) ? $settings['detail_check_icon'] : array();
 
 		$detail_classes = array( 'lt-image-text-slider__detail' );
 		if ( $text_right ) {
@@ -1713,7 +1889,7 @@ final class Image_Text_Slider extends Widget_Base {
 				<span class="lt-image-text-slider__detail-overlay" aria-hidden="true"></span>
 			</div>
 			<div class="lt-image-text-slider__detail-content">
-				<?php $this->render_detail_content_inner( $active_slide ); ?>
+				<?php $this->render_detail_content_inner( $active_slide, $check_icon ); ?>
 			</div>
 		</div>
 
@@ -1723,7 +1899,7 @@ final class Image_Text_Slider extends Widget_Base {
 					<?php $this->render_detail_media_inner( $slide ); ?>
 				</template>
 				<template class="lt-image-text-slider__detail-content-template" data-index="<?php echo esc_attr( (string) $index ); ?>">
-					<?php $this->render_detail_content_inner( $slide ); ?>
+					<?php $this->render_detail_content_inner( $slide, $check_icon ); ?>
 				</template>
 			<?php endforeach; ?>
 		</div>
@@ -1747,14 +1923,34 @@ final class Image_Text_Slider extends Widget_Base {
 	/**
 	 * Render the Detail Panel's badge/title/description for one slide — the
 	 * caller supplies the `.lt-image-text-slider__detail-content` wrapper.
+	 * Each description line gets the "Description List Icon" if one is set,
+	 * otherwise the built-in hand-drawn circle check (fill="currentColor",
+	 * so the Check Icon Color control drives it).
 	 *
-	 * @param array<string, mixed> $slide Repeater item settings.
+	 * @param array<string, mixed> $slide      Repeater item settings.
+	 * @param array<string, mixed> $check_icon "Description List Icon" setting.
 	 */
-	private function render_detail_content_inner( array $slide ): void {
+	private function render_detail_content_inner( array $slide, array $check_icon ): void {
 		$title       = (string) ( $slide['slide_title'] ?? '' );
 		$description = (string) ( $slide['slide_description'] ?? '' );
 		$badge_text  = (string) ( $slide['slide_badge_text'] ?? '' );
 		$badge_icon  = is_array( $slide['slide_badge_icon'] ?? null ) ? $slide['slide_badge_icon'] : array();
+		$desc_lines  = array_values( array_filter( array_map( 'trim', (array) preg_split( '/\R/u', $description ) ), 'strlen' ) );
+		$button_text = trim( (string) ( $slide['slide_button_text'] ?? '' ) );
+		$button_link = is_array( $slide['slide_button_link'] ?? null ) ? $slide['slide_button_link'] : array();
+		$button_url  = trim( (string) ( $button_link['url'] ?? '' ) );
+
+		$button_attrs = array(
+			'class' => 'lt-image-text-slider__detail-button',
+			'href'  => $button_url,
+		);
+		if ( ! empty( $button_link['is_external'] ) ) {
+			$button_attrs['target'] = '_blank';
+			$button_attrs['rel']    = 'noopener';
+		}
+		if ( ! empty( $button_link['nofollow'] ) ) {
+			$button_attrs['rel'] = trim( ( $button_attrs['rel'] ?? '' ) . ' nofollow' );
+		}
 		?>
 		<?php if ( '' !== $badge_text || ! empty( $badge_icon['value'] ) ) : ?>
 			<span class="lt-image-text-slider__detail-badge">
@@ -1773,8 +1969,25 @@ final class Image_Text_Slider extends Widget_Base {
 			<span class="lt-image-text-slider__detail-title"><?php echo esc_html( $title ); ?></span>
 		<?php endif; ?>
 
-		<?php if ( '' !== $description ) : ?>
-			<span class="lt-image-text-slider__detail-desc"><?php echo esc_html( $description ); ?></span>
+		<?php if ( ! empty( $desc_lines ) ) : ?>
+			<ul class="lt-image-text-slider__detail-desc">
+				<?php foreach ( $desc_lines as $line ) : ?>
+					<li class="lt-image-text-slider__detail-desc-item">
+						<span class="lt-image-text-slider__detail-check" aria-hidden="true">
+							<?php if ( ! empty( $check_icon['value'] ) ) : ?>
+								<?php Icons_Manager::render_icon( $check_icon, array( 'aria-hidden' => 'true' ) ); ?>
+							<?php else : ?>
+								<svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor"><path d="M15.64 5.01A8.6 8.6 0 1 0 19.39 8.97" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6.5 11.8C6.1 11 6.9 10.2 7.8 10.6 9 11.2 10.3 12.6 11 14.2 13 10.3 15.8 6.7 18.8 3.7 19.6 3 20.7 3.6 20.3 4.6 17.4 8.6 14.6 12.6 12.5 17 12 18 10.6 18 10.1 17.1 9 15 7.8 13.4 6.5 11.8Z"/></svg>
+							<?php endif; ?>
+						</span>
+						<span class="lt-image-text-slider__detail-desc-text"><?php echo esc_html( $line ); ?></span>
+					</li>
+				<?php endforeach; ?>
+			</ul>
+		<?php endif; ?>
+
+		<?php if ( '' !== $button_text && '' !== $button_url ) : ?>
+			<a<?php $this->render_attributes( $button_attrs ); ?>><?php echo esc_html( $button_text ); ?></a>
 		<?php endif; ?>
 		<?php
 	}
